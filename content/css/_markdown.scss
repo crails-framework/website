@@ -1,0 +1,33 @@
+@import "colors";
+
+#main {
+  padding: 0 20px;
+
+  h2 {
+    width: 100%;
+    border-bottom: 2px $shadow-color solid;
+  }
+
+  p {
+    text-align: justify;
+  }
+
+  a {
+    color: blue;
+    &:hover {
+      font-weight: bold;
+    }
+  }
+
+  code, pre {
+    padding: 4px;
+    font-family: monospace;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 3px;
+  }
+
+  pre {
+    padding: 16px;
+  }
+}

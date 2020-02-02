@@ -1,0 +1,25 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>A Brand New Nanoc Site - <%= @item[:title] %></title>
+    <link rel="stylesheet" href="/css/application.css">
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc <%= Nanoc::VERSION %>">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="/images/logo.png" />
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/tutorials.html">Tutorials</a></li>
+	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="main">
+      <%= yield %>
+    </div>
+  </body>
+</html>

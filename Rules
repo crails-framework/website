@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+ignore "/css/_*.scss"
+
+compile "/css/*.scss" do
+  filter :sass, syntax: :scss
+  write @item.identifier.without_ext + ".css"
+end
+
+compile "/**/*.md" do
+  filter :kramdown
+  layout "/default.*"
+  write @item.identifier.without_ext + ".html"
+end
+
+compile '/index.html' do
+  layout '/default.*'
+  write '/index.html'
+end
+
+compile '/**/*.html' do
+  layout '/default.*'
+  write item.identifier.without_ext + '/index.html'
+end
+
+compile '/**/*' do
+  write item.identifier.to_s
+end
+
+layout '/**/*', :erb
