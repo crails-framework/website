@@ -1,0 +1,195 @@
+---
+title: Getting Started with Crails Framework
+---
+
+<h2>1. Guide Assumptions</h2>
+<p>
+  This guide is designed for beginners who want to get started with Crails from scratch. It does not assume any prior experience with Crails.
+</p>
+
+<p>
+  We assume you are already familiar with the C++ programming language and CMake building tools.
+</p>
+
+<h2>2. Creating a new Crails Application</h2>
+<p>
+  The best way to read this guide is to follow it step by step. All steps are essential to run this example application and no additional code or steps are needed.
+</p>
+
+<p>
+  By following this guide, you'll create a very simple weblog.
+</p>
+
+<h3>2.1 Installing Crails</h3>
+<p>
+  First, if you haven't already done it before, you need to install Crails Framework.
+  You may do so by following the guide corresponding to your operating system:
+</p>
+<ul>
+  <li><a href="/getting-started/ubuntu.html" target="_blakn">Ubuntu</a></li>
+  <li><a href="/getting-started/archlinux.html" target="_blank">ArchLinux</a></li>
+</ul>
+
+<h3>2.2 Creating the Blog application</h3>
+<p>
+  Crails comes with a new application generator tool which will provide you the foundation of a fresh Crails application, so that you don't have to write it yourself.
+</p>
+
+<p>
+  To use this generator, open a terminal, navigate to the directory in which you wish to create the application, and type:
+</p>
+
+<pre>$ crails new blog</pre>
+
+<p>
+  This will create a Crails application called Blog in a `blog` directory.
+</p>
+
+<div class="hint-box">
+  You can see all of the command line options that the Crails application builder accepts by running <code>crails new -h</code>.
+</div>
+
+<p>
+  After you create the blog application, switch to its folder:
+</p>
+
+<pre>$ cd blog</pre>
+
+<p>
+  The <code>blog</code> directory has a number of auto-generated files and folders that make up the structure of a Crails application. Most of the work in this tutorial will happen in the <code>app</code> folder, but here's a basic rundown on the function of each file and folders that Crails created by default:
+</p>
+
+<table>
+  <tr>
+    <th>File/Folder</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>app/</td>
+    <td>Contains the controllers, models, views, helpers, mailers and assets for your application.</td>
+  </tr>
+  <tr>
+    <td>app/main.cpp</td>
+    <td>This file contains the entry point for the server binary.</td>
+  </tr>
+  <tr>
+    <td>app/routes.cpp</td>
+    <td>This is where you'll bind your routes with your controller methods.</td>
+  </tr>
+  <tr>
+    <td>build/</td>
+    <td>Output for your application binaires: server, tasks, anything from your application that can be executed will end up in thos folder.</td>
+  </tr>
+  <tr>
+    <td>config/</td>
+    <td>Configure your application's database, cookie store, and several optional features of Crails.</td>
+  </tr>
+  <tr>
+    <td>lib/</td>
+    <td>This folder is used for application code that you haven't written yourself. Crails use several code generating utilities: the <code>lib</code> folder is where this code will be generated and compiled from</td>
+  </tr>
+  <tr>
+    <td>logs/</td>
+    <td>In production application, this is where your application's log files will be stored</td>
+  </tr>
+  <tr>
+    <td>public/</td>
+    <td>The only folder seen by the world as-is. Contains static files and compiled assets.</td>
+  </tr>
+  <tr>
+    <td>spec/</td>
+    <td>This is where you'll write tests for your application.</td>
+  </tr>
+</table>
+
+<h2>3. Hello, Crails!</h2>
+<p>
+  To begin with, let's get some text up on screen quickly. Let's get your Crails application running:
+</p>
+
+<h3>3.1 Starting up the web server</h3>
+<pre><code>$ build/server</code></pre>
+
+<p>
+  This will fire up your server binary. To see your application in action, open a browser window and navigate to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a>. You should see the Crails default information page:
+</p>
+
+<p>TODO inserer une image de la Crails default information page</p>
+
+<div class="hint-box">
+  To stop the web server, hit Ctrl+C in the terminal window where it's running. To verify the server has stopped you should see your command prompt cursor again. Note that changes you make to your application's code won't get picked up by the server unless you run a new compilation using <code>crails compile</code> and then restart the server.
+</div>
+
+<p>
+  The Crails default information page is the smoke test for a new Crails application: it makes sure that your application is configured correctly and can receive and respond to http queries.
+</p>
+
+<h3>3.2 Say "Hello", Crails</h3>
+
+<p>
+  To get Crails to say "Hello", you need to create at minimum a controller and a view.
+</p>
+
+<p>
+  A controller's purpose is to receive specific requests for the application. <i>Routing</i> decides which controller receives which requests. Often, there is more than one route to each controller, and different routes can be served by different actions. Each action's purpose is to collect information to provide it to a view.
+</p>
+
+<p>
+  A view's purpose is to display this information in a human readable format. An important distinction to make is that it is the <i>controller</i>, not the view, where information is collected. The view should just display that information. By default, view templates are written in a language called ecpp (Embedded C++) which is used to generate the C++ code for your views.
+</p>
+
+<p>
+  To create a new controller, you will need to create a controller file named <code>app/controllers/welcome_controller.hpp</code> and use it to define a <code>WelcomeController</code> class with a public method called <code>index</code>, just like this:
+</p>
+
+<pre><code>#ifndef  WELCOME_CONTROLLER_HPP
+# define WELCOME_CONTROLLER_HPP
+
+# include &lt;crails/controller.hpp&gt;
+
+class WelcomeController : public Crails::Controller
+{
+public:
+  WelcomeController(Crails::Params& params) : Crails::Controller(params)
+  {
+  }
+
+  void index()
+  {
+    render(TEXT, "Hello world!");
+  }
+};</code></pre>
+
+<p>
+  Then, you need to register a new route in <code>app/routes.cpp</code>:
+</p>
+
+<pre><code>#include &lt;crails/router.hpp&gt;
+// Don't forget to include your controller's header !
+#include "controller/welcome_controller.hpp"
+
+void Crails::Router::initialize()
+{
+  SetRoute("GET", "/", WelcomeController, index);
+}
+</code></pre>
+
+<div class="hint-box">
+  For more information about routing, refer to the <a href="/getting-started/routing.html">Crails Routing guide</a>
+</div>
+
+<p>
+  Lastly, remove the default <code>index.html</code> file (otherwise, it will be served by default as the root of your application)</p>
+
+<pre><code>$ rm public/index.tml</code></pre>
+
+<p>
+  We're good to go. Compile your code and restart the server to get it to pick up your changes:
+</p>
+
+<pre><code>$ crails compile
+$ build/server</code></pre>
+
+<p>
+  Then, open <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> in a web browser. You'll see a simple text response saying "Hello world!".
+</p>
