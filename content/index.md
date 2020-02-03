@@ -42,26 +42,46 @@ Crails provides several code-generating tools, most notably with **crails-models
 	end
 
 ### Frontend C++ development
-Crails comes with the **crails-front** module, which uses [Cheerp](https://www.leaningtech.com/cheerp/) to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript, crails-front provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on...
+Crails comes with the **crails-front** module, which uses [Cheerp](https://www.leaningtech.com/pages/cheerp.html) to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript, crails-front provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on...
 
-	#include <cheerp/client.h>
 	#include <crails/front/element.hpp>
 	#include <crails/front/globals.hpp>
 	
 	void webMain()
 	{
-	  Crails::Front::Element header_element("h1").text("Hello world");
+	  Crails::Front::Element header_element("h1");
 
-	  Crails::Front::body.append(header_element);
+	  Crails::Front::body > header_element.text("Hello world!");
 	}
 
 ## Getting started
 
-### Installing Crails
+**1**. Install Crails using one of the following guides:
 
 * [Ubuntu](/getting-started/ubuntu.html)
 * [ArchLinux](/getting-started/archlinux.html)
 
-### Creating your first application
+**2**. At the command prompt, create a new Crails application:
 
-	crails create my_application
+	crails new my_application
+
+Where "my_application" is your application's name.
+
+**3**. Change directory to `my_application` and compile the application:
+
+	cd my_application
+	crails compile
+
+**4**. Run the server
+
+	build/server
+
+**5**. Go to `http://localhost:3000` and you'll see: "Welcome to your new Crails Application".
+
+### What next ?
+
+Follow our guides to start developing your application:
+
+* [Getting Started with Crails](/getting-started)
+* Crails Guides
+* The API Documentation
