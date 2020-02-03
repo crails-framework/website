@@ -83,5 +83,5 @@ Where "my_application" is your application's name.
 Follow our guides to start developing your application:
 
 * [Getting Started with Crails](/getting-started)
-* Crails Guides
+* [Crails Guides](/tutorials)
 * The API Documentation

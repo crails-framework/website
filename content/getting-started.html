@@ -127,15 +127,11 @@ title: Getting Started with Crails Framework
 <h3>3.2 Say "Hello", Crails</h3>
 
 <p>
-  To get Crails to say "Hello", you need to create at minimum a controller and a view.
+  To get Crails to say "Hello", you need to create at minimum a controller.
 </p>
 
 <p>
   A controller's purpose is to receive specific requests for the application. <i>Routing</i> decides which controller receives which requests. Often, there is more than one route to each controller, and different routes can be served by different actions. Each action's purpose is to collect information to provide it to a view.
-</p>
-
-<p>
-  A view's purpose is to display this information in a human readable format. An important distinction to make is that it is the <i>controller</i>, not the view, where information is collected. The view should just display that information. By default, view templates are written in a language called ecpp (Embedded C++) which is used to generate the C++ code for your views.
 </p>
 
 <p>
@@ -192,4 +188,60 @@ $ build/server</code></pre>
 
 <p>
   Then, open <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> in a web browser. You'll see a simple text response saying "Hello world!".
+</p>
+
+<h3>3.3 Say "Hello" with HTML</h3>
+
+<p>
+  In the last section, our server gave a response using the <code>text/plain</code> format. To provide an HTML response, you'll need to create a view.
+</p>
+
+<p>
+  A view's purpose is to display this information in a human readable format. An important distinction to make is that it is the <i>controller</i>, not the view, where information is collected. The view should just display that information. By default, view templates are written in a language called ecpp (Embedded C++) which is used to generate the C++ code for your views.
+</p>
+
+<p>
+  First, you need to enable ecpp template rendering in your application. To do that, you need to add the <code>crails-html</code> module to your application, by running the following command:
+</p>
+
+<pre><code>$ crails module html install</code></pre>
+
+<p>
+  Now, we'll add a new folder at <code>app/views/welcome</code> to create an ecpp template named <code>app/views/welcome/index.ecpp</code>
+</p>
+
+<pre><code>// END LINKING
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Hello world!&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    This view has been generated from an ecpp template.
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p>
+  We also need to update our controller at <code>app/controllers/welcome_controller.hpp</code>so that it responds using our view:
+</p>
+
+<pre><code>#ifndef  WELCOME_CONTROLLER_HPP
+# define WELCOME_CONTROLLER_HPP
+
+# include &lt;crails/controller.hpp&gt;
+
+class WelcomeController : public Crails::Controller
+{
+public:
+  WelcomeController(Crails::Params& params) : Crails::Controller(params)
+  {
+  }
+
+  void index()
+  {
+    render("welcome/index");
+  }
+};</code></pre>
+
+<p>
+  Compile and restart your server, then go to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> to see that your application now provides an HTML response.
 </p>
