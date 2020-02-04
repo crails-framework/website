@@ -15,9 +15,8 @@ body {
 .hint-box {
   background-color: #d5e9f6;
   padding: 20px;
-  margin: 0 20px;
-  width: calc(100% - 80px);
-  min-height: 37px;
+  width: 100%;
+  min-height: 75px;
   &:before {
     content: url("/images/information-icon.png");
     width: 50px;

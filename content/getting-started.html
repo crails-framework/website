@@ -78,19 +78,19 @@ title: Getting Started with Crails Framework
   </tr>
   <tr>
     <td>build/</td>
-    <td>Output for your application binaires: server, tasks, anything from your application that can be executed will end up in thos folder.</td>
+    <td>Output for your application binaires: server, tasks, anything from your application that can be executed will end up in this folder.</td>
   </tr>
   <tr>
     <td>config/</td>
-    <td>Configure your application's database, cookie store, and several optional features of Crails.</td>
+    <td>Configure your application's database, <a href="/getting-started/request_pipeline.html">request pipeline</a> and several optional features of Crails.</td>
   </tr>
   <tr>
     <td>lib/</td>
-    <td>This folder is used for application code that you haven't written yourself. Crails use several code generating utilities: the <code>lib</code> folder is where this code will be generated and compiled from</td>
+    <td>This folder is used for application code that you haven't written yourself. Crails uses several code generating utilities: the <code>lib</code> folder is where this code will be generated and compiled from</td>
   </tr>
   <tr>
     <td>logs/</td>
-    <td>In production application, this is where your application's log files will be stored</td>
+    <td>In a production environment, this is where your application's log files will be stored</td>
   </tr>
   <tr>
     <td>public/</td>
@@ -99,6 +99,18 @@ title: Getting Started with Crails Framework
   <tr>
     <td>spec/</td>
     <td>This is where you'll write tests for your application.</td>
+  </tr>
+  <tr>
+    <td>CMakeLists.txt</td>
+    <td>Contains a set of directives describing the project's source files, dependencies, and build targets.</td>
+  </tr>
+  <tr>
+    <td>Gemfile</td>
+    <td>Crails uses ruby scripts to generate C++ code. This file specifies the dependencies required by those scripts.</td>
+  </tr>
+  <tr>
+    <td>Guardfile</td>
+    <td>Defines a list of tasks to compile your code. This file is where you'll describe how to generate C++ code, as well as the JavaScript and CSS assets for your application.</td>
   </tr>
 </table>
 
@@ -114,7 +126,7 @@ title: Getting Started with Crails Framework
   This will fire up your server binary. To see your application in action, open a browser window and navigate to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a>. You should see the Crails default information page:
 </p>
 
-<p>TODO inserer une image de la Crails default information page</p>
+<img src="/images/crails-welcome-page-screenshot.png" />
 
 <div class="hint-box">
   To stop the web server, hit Ctrl+C in the terminal window where it's running. To verify the server has stopped you should see your command prompt cursor again. Note that changes you make to your application's code won't get picked up by the server unless you run a new compilation using <code>crails compile</code> and then restart the server.
@@ -154,14 +166,15 @@ public:
   {
     render(TEXT, "Hello world!");
   }
-};</code></pre>
+};
+
+#endif</code></pre>
 
 <p>
   Then, you need to register a new route in <code>app/routes.cpp</code>:
 </p>
 
 <pre><code>#include &lt;crails/router.hpp&gt;
-// Don't forget to include your controller's header !
 #include "controller/welcome_controller.hpp"
 
 void Crails::Router::initialize()
@@ -210,8 +223,7 @@ $ build/server</code></pre>
   Now, we'll add a new folder at <code>app/views/welcome</code> to create an ecpp template named <code>app/views/welcome/index.ecpp</code>
 </p>
 
-<pre><code>// END LINKING
-&lt;html&gt;
+<pre><code>&lt;html&gt;
   &lt;head&gt;
     &lt;title&gt;Hello world!&lt;/title&gt;
   &lt;/head&gt;
@@ -220,7 +232,7 @@ $ build/server</code></pre>
   &lt;/body&gt;
 &lt;/html&gt;</code></pre>
 
-<p>
+<p style="text-align: left">
   We also need to update our controller at <code>app/controllers/welcome_controller.hpp</code>so that it responds using our view:
 </p>
 
@@ -240,8 +252,250 @@ public:
   {
     render("welcome/index");
   }
-};</code></pre>
+};
+
+#endif</code></pre>
 
 <p>
   Compile and restart your server, then go to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> to see that your application now provides an HTML response.
 </p>
+
+<h2>4. Getting Up and Running</h2>
+
+<p>
+  Now that you've seen how to create a controller, an action, and a view, let's create something with a bit more substance.
+</p>
+
+<p>
+  In the Blog application, you will now create a new resource. A resource is the term used for a collection of similar objects, such as articles, people, or animals. You can create, read, update, and destroy items for a resource and these operations are referred to as CRUD operations.
+</p>
+
+<h3>4.1 Creating a model</h3>
+
+<p>
+  Since we will be using an SQL database, we also need to add <code>crails-odb</code> to our new application:
+</p>
+
+<pre>$ crails module odb install</pre>
+
+<p>
+  You will be asked which kind of database you wish to use with crails-odb. For this application, we'll use <code>sqlite</code>:
+</p>
+
+<pre>
+Available backends are mysql,pgsql,sqlite,oracle.
+$&gt; sqlite
+</pre>
+
+<p>
+  This will update your CMakeLists.txt to link your application to the odb libraries, adds new pre-compilation tasks in your Guardfile, and adds the odb_migrate task which we'll describe later on.
+</p>
+
+<p>
+  We will now create a new database-backed model. Create the file <code>app/models/article.hpp</code> containing the following code:
+</p>
+
+<pre><code>#ifndef  ARTICLE_HPP
+# define ARTICLE_HPP
+
+# include &lt;crails/odb/model/base.hpp&gt;
+
+# pragma db object pointer(std::shared_ptr)
+class Article : public ODB::ModelBase
+{
+  friend class odb::access;
+  odb_instantiable()
+public:
+  Article() {}
+
+  const std::string& get_title() const { return title; }
+  void set_title(const std::string& value) { title = value; }
+  const std::string& get_content() { return content; }
+  void set_content(const std::string& value) { content = value; }
+
+private:
+  #pragma db
+  std::string title;
+  #pragma db
+  std::string content;
+};
+
+#endif</pre></code>
+
+<div class="hint-box">
+  You can learn more about ODB's pragma language in ODB's manual <a href="https://www.codesynthesis.com/products/odb/doc/manual.xhtml#14" target=_blank">ODB Pragma Language section</a>.
+</div>
+
+<p>
+  Also add the corresponding source file at <code>app/models/article.cpp</code>:
+</p>
+
+<pre><code>#include "article.hpp"
+
+odb_instantiable_impl(Article)</pre></code>
+
+<p>
+  After adding or editing a model header, we must generate and run a migration on the database. We will first generate our database code using odb:
+</p>
+
+<pre><code>$ crails compile crailsodb
+$ crails compile</code></pre>
+
+<p>
+We can now run the odb_migrate task to apply the new migrations to our database. Since the database doesn't exist yet, we'll use the <code>-c</code> option to have the task create it with the following command:
+</p>
+
+<pre><code>$ build/tasks/odb_migrate/task -c</code></pre>
+
+<h3 id="sec4_2">4.2 Creating views</h3>
+
+<p>
+  Now that we have a model class, we need to add views to display and interact with it. We'll start by creating view templates to create and read Article objects. By convention, we'll create views related to the Article model in the <code>app/views/articles</code> folder.
+</p>
+
+<p>
+  We'll start with a form to create new articles:
+</p>
+
+<pre><code>&lt;h1&gt;New Article&lt;/h1&gt;
+&lt;form action="/articles" method="post"&gt;
+  &lt;p&gt;
+    &lt;label for="article[title]"&gt;Title&lt;/label&gt;
+    &lt;input type="text" name="article[title]" /&gt;
+  &lt;/p&gt;
+  &lt;p&gt;
+    &lt;label for="article[content]"&gt;Content&lt;/label&gt;
+    &lt;textarea name="article[content]&gt;&lt;/textarea&gt;
+  &lt;/p&gt;
+  &lt;button type="submit"&gt;Create&lt;/button&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p>
+  Later on, we'll have to match the method and action attribute of the form element to a route within our application. The controller action we'll use will then need to create an article from the form data that it will receive.
+</p>
+
+<p>
+  Before we do that, we'll create another view, to visualize an existing Article. This time we'll use embedded C++:
+</p>
+
+<pre><code>#include "app/models/article.hpp"
+
+Article* @article;
+// END LINKING
+&lt;h1&gt;&lt;%= article.get_title() -%&gt;&lt;/h1&gt;
+&lt;p&gt;
+  &lt;%= article.get_content() %&gt;
+&lt;/p&gt;
+</code></pre>
+
+<p>
+  This template is different from the last ones: since we need access to the Article model to display it, we've added a section before the template's html to specify the requirements for the view. We call it the linking section.
+</p>
+
+<p>
+  That linking section always ends with the line <code>// END LINKING</code>. Before that line, you can sepcify the required include file as well as a list of local variables to use within the view template.
+</p>
+
+<p>
+  Here, the linking section includes the <code>app/models/article.hpp</code> header, and defines a <i>bounded</i> variable named <code>article</code>. A bounded variable is a variable that can be initialized from one of your Controllers, and the <code>@</code> before the variable's name is a hint telling the template compiler that the following variable can be bounded.
+</p>
+
+<p>Following the linking section is the actual HTML code for your template view. You'll see that we use <code>&lt;%=</code> and <code>%&gt;</code> markers to inject content from C++ code into the view, such as <code>&lt;%= article.get_content() %&gt;</code>.</p>
+
+<div class="hint-box">
+  You can learn more about ecpp's syntax by reading the <a href="/tutorials/html.html">crails-html guide</a>.
+</div>
+
+<h3>4.3 Setting up CRUD actions</h3>
+
+<p>
+It's now time to write our first controller to implement create, read, update and delete actions for our new model. We'll start with a header file, in <code>app/controllers/articles_controller.hpp</code>:
+</p>
+
+<pre><code>#ifndef  ARTICLES_CONTROLLER_HPP
+# define ARTICLES_CONTROLLER_HPP
+
+# include &lt;crails/odb/controller.hpp&gt;
+# include "app/models/article.hpp"
+
+class ArticlesController : public ODB::Controller
+{
+public:
+  ArticlesController(Crails::Params& params) : Controller(params)
+  {
+  }
+
+  void index()   { render("articles/index"); }
+  void show()    { render("articles/show"); }
+  void add()     { render("articles/add"); }
+  void create()  { render("articles/show"); }
+  void update()  { render("articles/show"); }
+  void destroy() { render("articles/index"); }
+};
+
+#endif
+</code></pre>
+
+<p>
+  Note that to perform SQL queries in your controller, you need to have your controller class inherit from the <code>ODB::Controller</code> class.
+</p>
+
+<p>
+  We then connect those methods to new routes by editing <code>app/routes.cpp</code> as following:
+</p>
+
+<pre><code>#include &lt;crails/router.hpp&gt;
+#include "controllers/articles_controller.hpp"
+
+void Crails::Router::initialize()
+{
+  SetRoute("GET",    "/articles",     ArticlesController, index);
+  SetRoute("GET",    "/articles/add", ArticlesController, add);
+  SetRoute("POST",   "/articles",     ArticlesController, create);
+  SetRoute("GET",    "/articles/:id", ArticlesController, show);
+  SetRoute("PUT",    "/articles/:id", ArticlesController, update);
+  SetRoute("DELETE", "/articles/:id", ArticlesController, destroy);
+}
+</code></pre>
+
+<h3>4.4 Saving data in the controller</h3>
+
+<p>
+  Back in <code>ArticlesController</code>, we need to change the <code>create</code> action to use the new <code>Article</code> model to save the data in the database. Open <code>app/controllers/articles_controller.cpp</code> and change the <code>create</code> action to look like this:
+</p>
+
+<pre><code>void create()
+{
+  auto model = std::make_shared&lt;Article&gt;();
+
+  model.set_title(params["article"]["title"].as&lt;std::string&gt;());
+  model.set_content(params["article"]["content"].as&lt;std::string&gt;());
+  database.save(*model);
+  database.commit();
+  render("articles/show", {
+    {"article", model.get()}
+  });
+}</code></pre>
+
+<p>
+  Here's what's going on: we first retrieve the form data by using the controller's <code>params</code> instance variable. Using it, we initialize our model's title and content attributes. Then, we use the controller's <code>database</code> instance variable to save the model in our sqlite database, and we also call the <code>database.commit()</code> method to commit our changes to the database. You must commit your changes, or they will be rollbacked once you leave your controller's action.
+</p>
+
+<p>
+  Finally, we render the <code>app/view/articles/show.ecpp</code> view. The second parameter in the render method call is used to bind your local variables to the view's, as seen in section <a href="#sec4_2">4.2. Creating views</a>.
+</p>
+
+<h4>4.5 Showing articles</h4>
+
+<p>TODO</p>
+
+<h2>10. What's next ?</h2>
+
+<p>Now that you've seen your first Crails application, you should feel free to update it and experiment on your own.</p>
+
+<p>Remember, you don't have to do everything without help. As you need assistance getting up and running with Rails, feel free to consult these support resources:</p>
+
+<ul>
+  <li>The <a href="/tutorials">Crails Guides</li>
+</ul>
