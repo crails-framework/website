@@ -369,8 +369,11 @@ odb_instantiable_impl(Article)</pre></code>
   After adding or editing a model header, we must generate and run a migration on the database. We will first generate our database code using odb:
 </p>
 
-<pre><code>$ crails compile crailsodb
-$ crails compile</code></pre>
+<pre><code>$ crails compile</code></pre>
+
+<div class="hint-box">
+  By default, the <code>crails compile</code> runs all of your project's pre-compiling and compiling tasks. But it can also run tasks individually: for instance, if you want it only to generate your database code, you'd use <code>crails compile crailsodb</code>.
+</div>
 
 <p>
 We can now run the odb_migrate task to apply the new migrations to our database. Since the database doesn't exist yet, we'll use the <code>-c</code> option to have the task create it with the following command:
@@ -789,30 +792,117 @@ odb::result&lt;Article&gt;&amp; @articles;
   Create the new file <code>app/views/articles/_form.ecpp</code> with the following content:
 </p>
 
-<pre><code>
-</code></pre>
+<pre><code>#include &lt;crails/params.hpp&gt;
+#include "app/models/article.hpp"
+
+Crails::Params&amp; @params;
+std::shared_ptr&lt;Article&gt; @article = nullptr;
+std::stringstream action;
+// END LINKING
+
+&lt;% action &lt;&lt; "/articles" -%&gt;
+&lt;% if (article) do -%&gt;
+  &lt;% action &lt;&lt; '/' &lt;&lt; article-&gt;get_id() -%&gt;
+&lt;% end else do -%&gt;
+  &lt;% article = std::make_shared&lt;Article&gt;() -%&gt;
+&lt;% end -%&gt;
+
+&lt;form action="&lt;%= action.str() %&gt;" method="post"&gt;
+  &lt;input type="hidden" name="csrf-token" value="&lt;%= params.get_session()["csrf_token"].defaults_to&lt;std::string&gt;(""); %&gt;" /&gt;
+  &lt;p&gt;
+    &lt;label for="article[title]"&gt;Title&lt;/label&gt;
+    &lt;input type="text" name="article[title]" value="&lt;%= article-&gt;get_title() %&gt;" /&gt;
+  &lt;/p&gt;
+  &lt;p&gt;
+    &lt;label for="article[content]"&gt;Content&lt;/label&gt;
+    &lt;textarea name="article[content]"&gt;&lt;%= article-&gt;get_content() %&gt;&lt;/textarea&gt;
+  &lt;/p&gt;
+  &lt;button type="submit"&gt;
+    &lt;%= (article-&gt;get_id() == ODB_NULL_ID ? "Create" : "Edit") %&gt;
+  &lt;/button&gt;
+&lt;/form&gt;</code></pre>
 
 <p>
+This form view can handle two different cases:
+<ul>
+  <li>
+    if the variable <code>article</code> is bounded by the controller, it will render an edition form, filling it with the model's values.
+  </li>
+  <li>
+    if it is not set however, it will render a addition form, creating an empty article model, and using it to fill the form with the default values for each field.
+  </li>
+</ul>
 </p>
 
 <p>
   Now, let's update the <code>app/views/articles/new.ecpp</code> view to use this partial, rewriting it completely:
 </p>
 
-<pre><code>
-</code></pre>
+<pre><code>&lt;h1&gt;New Article&lt;/h1&gt;
+&lt;%= partial("articles/_form") %&gt;</code></pre>
 
 <p>
   Then do the same for the <code>app/views/articles/edit.ecpp</code> view:
 </p>
 
-<pre><code>
+<pre><code>&lt;h1&gt;Edit article&lt;/h1&gt;
+&lt;%= partial("articles/_form") %&gt;
 </code></pre>
+
+<p>
+  To render <code>app/views/articles/_form.ecpp</code> within these two views, we're calling the <code>partial</code> method. By default, it will forward all of its bounded variables to the partial view.
+</p>
 
 <h4>4.10 Deleting articles</h4>
 
 <p>
-  Almost there ! Now we only need to add a way to remove articles
+  We're now ready to cover the "D" part of CRUD, deleting articles from the database. Following the REST convention, the route for deleting articles will be the following:
+</p>
+
+<pre><code>SetRoute("DELETE", "/articles/:id", ArticlesController, destroy);</code></pre>
+
+<p>
+  The <code>delete</code> routing method should be used for routes that destroy resources. If this was left as a typical <code>get</code> route, it could be possible for people to craft malicious URLs like this:
+</p>
+
+<pre><code>&lt;a href='http://example.com/articles/1/destroy'&gt;look at this cat!&lt;/a&gt;</code></pre>
+
+<p>
+  We use the <code>delete</code> method for destroying resources, and this route is mapped to the <code>destroy</code> action inside <code>app/controllers/articles_controller.hpp</code>, which doesn't exist yet. The <code>destroy</code> method is generally the last CRUD action in the controller. Let's add it:
+</p>
+
+<pre><code>void destroy()
+{
+  std::shared_ptr&lt;Article&gt; model;
+
+  if (!params["id"].is_blank() &amp;&amp; database.find_one(model, params["id"].as&lt;ODB::id_type&gt;()))
+  {
+    database.destroy(*model);
+    database.commit();
+    redirect_to("/articles");
+  }
+  else
+    respond_with(ResponseStatus::not_found);
+}</code></pre>
+
+<p>
+You can call the <code>database</code>'s <code>template&lt;class MODEL&gt; destroy(MODEL&amp;)</code> method when you want to delete objects them from the database. Note that we don't need to add a view for this action since we're redirecting to the index action.
+</p>
+
+<p>
+Finally, add a 'Destroy' link to your index action template (<code>app/views/articles/index.ecpp</code>) to wrap everything together.
+</p>
+
+<pre><code>
+TODO
+</code></pre>
+
+<div class="hint-box">
+  You can learn more about Unobstrusive JavaScript on <a href="#">Working with JavaScript in Crails</a> guide.
+</div>
+
+<p>
+  Congratulations, you can now create, show, list, update, and destroy articles.
 </p>
 
 <!--
