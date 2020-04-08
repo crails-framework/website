@@ -20,7 +20,14 @@ end
 
 compile '/**/*.html' do
   layout '/default.*'
+  filter :erb
   write item.identifier.without_ext + '/index.html'
+end
+
+compile '/**/*.html.erb' do
+  layout '/default.*'
+  filter :erb
+  write item.identifier.without_ext.gsub(/\.html$/, '') + '/index.html'
 end
 
 compile '/**/*' do
