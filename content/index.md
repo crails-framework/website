@@ -26,11 +26,11 @@ Crails comes with a small variety of modules providing features commonly needed 
 * **crails-sentry** handles server _errors monitoring_ through [Sentry](http://sentry.io/)
 
 ### Code generation
-Crails provides several code-generating tools, most notably with **crails-models** which provides a simple DSL for describing models:
+Crails provides several code-generating tools, most notably with **MetaRecord** which provides a simple DSL for describing models:
 
 	add_include "app/models/degree.hpp"
 	
-	Model.add "StudentGroup", ["::StudentGroup", "app/models/student_group.hpp"] do
+	Model.add "StudentGroup", header: "app/models/student_group.hpp" do
 	  resource_name "student_group"
 	  property "std::string",    "code"
 	  property "std::string",    "name",        validate: { required: true }, db: { type: "TEXT", column: "alt_name" }
@@ -42,16 +42,16 @@ Crails provides several code-generating tools, most notably with **crails-models
 	end
 
 ### Frontend C++ development
-Crails comes with the **crails-front** module, which uses [Cheerp](https://www.leaningtech.com/pages/cheerp.html) to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript, crails-front provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on...
+Crails integrates **Comet.cpp**, which uses [Cheerp](https://www.leaningtech.com/pages/cheerp.html) to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript, Comet.cpp provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on...
 
-	#include <crails/front/element.hpp>
-	#include <crails/front/globals.hpp>
+	#include <comet/element.hpp>
+	#include <comet/globals.hpp>
 	
 	void webMain()
 	{
-	  Crails::Front::Element header_element("h1");
+	  Comet::Element header_element("h1");
 
-	  Crails::Front::body > header_element.text("Hello world!");
+	  Comet::body > header_element.text("Hello world!");
 	}
 
 ## Getting started
