@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <title>Crails Framework - <%= @item[:title] %></title>
     <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="/css/code-qtcreator.css">
+    <script src="/highlight.pack.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
     <meta name="generator" content="Nanoc <%= Nanoc::VERSION %>">
@@ -25,5 +27,6 @@
       This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
       It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
     </div>
+    <script>hljs.initHighlightingOnLoad();</script>
   </body>
 </html>
