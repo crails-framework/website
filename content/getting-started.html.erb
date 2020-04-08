@@ -150,10 +150,11 @@ title: Getting Started with Crails Framework
   To create a new controller, you will need to create a controller file named <code>app/controllers/welcome_controller.hpp</code> and use it to define a <code>WelcomeController</code> class with a public method called <code>index</code>, just like this:
 </p>
 
-<pre><code>#ifndef  WELCOME_CONTROLLER_HPP
+<%= code_block <<HTML
+#ifndef  WELCOME_CONTROLLER_HPP
 # define WELCOME_CONTROLLER_HPP
 
-# include &lt;crails/controller.hpp&gt;
+# include <crails/controller.hpp>
 
 class WelcomeController : public Crails::Controller
 {
@@ -168,20 +169,24 @@ public:
   }
 };
 
-#endif</code></pre>
+#endif
+HTML
+%>
 
 <p>
   Then, you need to register a new route in <code>app/routes.cpp</code>:
 </p>
 
-<pre><code>#include &lt;crails/router.hpp&gt;
+<%= code_block <<HTML
+#include <crails/router.hpp>;
 #include "controller/welcome_controller.hpp"
 
 void Crails::Router::initialize()
 {
   SetRoute("GET", "/", WelcomeController, index);
 }
-</code></pre>
+HTML
+%>
 
 <div class="hint-box">
   For more information about routing, refer to the <a href="/getting-started/routing.html">Crails Routing guide</a>
@@ -904,6 +909,124 @@ TODO
 <p>
   Congratulations, you can now create, show, list, update, and destroy articles.
 </p>
+
+<h2>5. Adding a second model</h2>
+<p>
+  It's time to add a second model to the application. The second model will handle comments on articles.
+</p>
+
+<h3>5.1 Adding the comment model</h3>
+
+<p>
+  Create the following file in <code>app/models/comment.hpp</code>:
+</p>
+
+<%= code_block <<HTML
+#ifndef  COMMENT_HTML
+# define COMMENT_HTML
+
+# include <crails/odb/model/base.hpp>
+# include "article.hpp"
+
+# pragma db object pointer(std::shared_ptr)
+class Comment : public ODB::ModelBase
+{
+  friend class odb::access;
+  odb_instantiable()
+public:
+  Comment() {}
+
+  const std::string& get_commenter() const { return commenter; }
+  const std::string& get_body() const { return body; }
+  void set_commenter(const std::string& value) { commenter = value; }
+  void set_body(const std::string& value) { body = value; }
+
+private:
+  std::string commenter;
+  std::string body;
+  std::shared_ptr<Article> article;
+};
+
+#endif
+HTML
+%>
+
+<p>
+  And you must also add a source file implementing this model at <code>app/models/comment.cpp</code>:
+</p>
+
+<%= code_block <<HTML
+#include "comment.hpp"
+#include "lib/odb/comment-odb.hxx"
+
+odb_instantiable_impl(Comment)
+HTML
+%>
+
+<h3>5.2 Updating the database version</h3>
+
+<p>
+  Now that the model code is ready, before doing anything else, we must update the version number of our database model. This will allow the <code>odb</code> compiler to know which changes must be applied to the database on the next migration.
+</p>
+
+<p>
+  Open <code>config/odb.hpp</code>. Right now, it looks like this
+</p>
+
+<%= code_block <<HTML
+#ifndef  CONFIG_ODB_HPP
+# define CONFIG_ODB_HPP
+
+// Enable schema versioning
+# pragma db model version(1,1)
+
+// Map your odb types here
+# pragma db map type("INTEGER\\[\\]") as("TEXT") to("(?)::INTEGER[]") from("(?)::TEXT")
+
+#endif
+HTML
+%>
+
+<p>
+  Everytime you make a change to the database model (by adding a non-transient property on a database object, for instance), you must change the database model version before performing a database migration.
+</p>
+
+<p>
+  To do so, we will change the minor version of our database model by editing <code>pragma db model</code> line to this:
+</p>
+
+<%= code_block <<HTML
+# pragma db model version(1,2)
+HTML
+%>
+
+<p>
+  Now that we incremented the version of our database model, we should re-build our server with the following command:
+</p>
+
+<pre><code>$ crails compile</code></pre>
+
+<p>
+  And to finish up, we'll run the migration that will add the table corresponding to our <code>Comment</code> class to the database:
+</p>
+
+<pre><code>$ build/tasks/odb_migrate/task odb</code></pre>
+
+<h3>5.3 Adding a route for comments</h3>
+
+<p>
+  As with the <code>welcome</code> controller, we will need to add a route so that Crails knows where we would like to navigate to see <code>comments</code>. Open up the <code>app/routes.cpp</code> file again, and edit it as follows:
+</p>
+
+<pre><code>SetRoute("POST", "/articles/:article_id/comment", CommentsController, create);</code></pre>
+
+<p>
+  Since the comments will be displayed from the <code>article</code> view, we only need one route for the comments to be added. We also make sure the route includes a parameter for the controller to know on which article it the comment will be added to.
+</p>
+
+<h3>5.4 Adding a Controller</h3>
+
+<p>With the model in hand, you can turn your attention to creating a matching controller</p>
 
 <!--
 <div class="hint-box">
