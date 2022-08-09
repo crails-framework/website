@@ -1,0 +1,1114 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Getting Started with Crails Framework</title>
+    <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="/css/code-qtcreator.css">
+    <script src="/highlight.pack.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="/images/logo.png" />
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/getting-started">Getting started</a></li>
+        <li><a href="/tutorials">Tutorials</a></li>
+	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="main">
+      <h2>1. Guide Assumptions</h2>
+<p>
+  This guide is designed for beginners who want to get started with Crails from scratch. It does not assume any prior experience with Crails.
+</p>
+
+<p>
+  We assume you are already familiar with the C++ programming language and CMake building tools.
+</p>
+
+<h2>2. Creating a new Crails Application</h2>
+<p>
+  The best way to read this guide is to follow it step by step. All steps are essential to run this example application and no additional code or steps are needed.
+</p>
+
+<p>
+  By following this guide, you'll create a very simple weblog.
+</p>
+
+<h3>2.1 Installing Crails</h3>
+<p>
+  First, if you haven't already done it before, you need to install Crails Framework.
+  You may do so by following the guide corresponding to your operating system:
+</p>
+<ul>
+  <li><a href="/getting-started/ubuntu.html" target="_blakn">Ubuntu</a></li>
+  <li><a href="/getting-started/archlinux.html" target="_blank">ArchLinux</a></li>
+</ul>
+
+<h3>2.2 Creating the Blog application</h3>
+<p>
+  Crails comes with a new application generator tool which will provide you the foundation of a fresh Crails application, so that you don't have to write it yourself.
+</p>
+
+<p>
+  To use this generator, open a terminal, navigate to the directory in which you wish to create the application, and type:
+</p>
+
+<pre>$ crails new blog</pre>
+
+<p>
+  This will create a Crails application called Blog in a `blog` directory.
+</p>
+
+<div class="hint-box">
+  You can see all of the command line options that the Crails application builder accepts by running <code>crails new -h</code>.
+</div>
+
+<p>
+  After you create the blog application, switch to its folder:
+</p>
+
+<pre>$ cd blog</pre>
+
+<p>
+  The <code>blog</code> directory has a number of auto-generated files and folders that make up the structure of a Crails application. Most of the work in this tutorial will happen in the <code>app</code> folder, but here's a basic rundown on the function of each file and folders that Crails created by default:
+</p>
+
+<table>
+  <tr>
+    <th>File/Folder</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>app/</td>
+    <td>Contains the controllers, models, views, helpers, mailers and assets for your application.</td>
+  </tr>
+  <tr>
+    <td>app/main.cpp</td>
+    <td>This file contains the entry point for the server binary.</td>
+  </tr>
+  <tr>
+    <td>app/routes.cpp</td>
+    <td>This is where you'll bind your routes with your controller methods.</td>
+  </tr>
+  <tr>
+    <td>build/</td>
+    <td>Output for your application binaires: server, tasks, anything from your application that can be executed will end up in this folder.</td>
+  </tr>
+  <tr>
+    <td>config/</td>
+    <td>Configure your application's database, <a href="/getting-started/request_pipeline.html">request pipeline</a> and several optional features of Crails.</td>
+  </tr>
+  <tr>
+    <td>lib/</td>
+    <td>This folder is used for application code that you haven't written yourself. Crails uses several code generating utilities: the <code>lib</code> folder is where this code will be generated and compiled from</td>
+  </tr>
+  <tr>
+    <td>logs/</td>
+    <td>In a production environment, this is where your application's log files will be stored</td>
+  </tr>
+  <tr>
+    <td>public/</td>
+    <td>The only folder seen by the world as-is. Contains static files and compiled assets.</td>
+  </tr>
+  <tr>
+    <td>spec/</td>
+    <td>This is where you'll write tests for your application.</td>
+  </tr>
+  <tr>
+    <td>CMakeLists.txt</td>
+    <td>Contains a set of directives describing the project's source files, dependencies, and build targets.</td>
+  </tr>
+  <tr>
+    <td>Gemfile</td>
+    <td>Crails uses ruby scripts to generate C++ code. This file specifies the dependencies required by those scripts.</td>
+  </tr>
+  <tr>
+    <td>Guardfile</td>
+    <td>Defines a list of tasks to compile your code. This file is where you'll describe how to generate C++ code, as well as the JavaScript and CSS assets for your application.</td>
+  </tr>
+</table>
+
+<h2>3. Hello, Crails!</h2>
+<p>
+  To begin with, let's get some text up on screen quickly. Let's get your Crails application running:
+</p>
+
+<h3>3.1 Starting up the web server</h3>
+<pre><code>$ build/server</code></pre>
+
+<p>
+  This will fire up your server binary. To see your application in action, open a browser window and navigate to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a>. You should see the Crails default information page:
+</p>
+
+<img src="/images/crails-welcome-page-screenshot.png" />
+
+<div class="hint-box">
+  To stop the web server, hit Ctrl+C in the terminal window where it's running. To verify the server has stopped you should see your command prompt cursor again. Note that changes you make to your application's code won't get picked up by the server unless you run a new compilation using <code>crails compile</code> and then restart the server.
+</div>
+
+<p>
+  The Crails default information page is the smoke test for a new Crails application: it makes sure that your application is configured correctly and can receive and respond to http queries.
+</p>
+
+<h3>3.2 Say "Hello", Crails</h3>
+
+<p>
+  To get Crails to say "Hello", you need to create at minimum a controller.
+</p>
+
+<p>
+  A controller's purpose is to receive specific requests for the application. <i>Routing</i> decides which controller receives which requests. Often, there is more than one route to each controller, and different routes can be served by different actions. Each action's purpose is to collect information to provide it to a view.
+</p>
+
+<p>
+  To create a new controller, you will need to create a controller file named <code>app/controllers/welcome_controller.hpp</code> and use it to define a <code>WelcomeController</code> class with a public method called <code>index</code>, just like this:
+</p>
+
+<pre><code class="language-cpp">#ifndef  WELCOME_CONTROLLER_HPP
+# define WELCOME_CONTROLLER_HPP
+
+# include &lt;crails/controller.hpp&gt;
+
+class WelcomeController : public Crails::Controller
+{
+public:
+  WelcomeController(Crails::Params&amp; params) : Crails::Controller(params)
+  {
+  }
+
+  void index()
+  {
+    render(TEXT, &quot;Hello world!&quot;);
+  }
+};
+
+#endif
+</code></pre>
+
+<p>
+  Then, you need to register a new route in <code>app/routes.cpp</code>:
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/router.hpp&gt;;
+#include &quot;controller/welcome_controller.hpp&quot;
+
+void Crails::Router::initialize()
+{
+  SetRoute(&quot;GET&quot;, &quot;/&quot;, WelcomeController, index);
+}
+</code></pre>
+
+<div class="hint-box">
+  For more information about routing, refer to the <a href="/tutorials/routing">Crails Routing guide</a>
+</div>
+
+<p>
+  Lastly, remove the default <code>index.html</code> file (otherwise, it will be served by default as the root of your application)</p>
+
+<pre><code>$ rm public/index.tml</code></pre>
+
+<p>
+  We're good to go. Compile your code and restart the server to get it to pick up your changes:
+</p>
+
+<pre><code>$ crails compile
+$ build/server</code></pre>
+
+<p>
+  Then, open <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> in a web browser. You'll see a simple text response saying "Hello world!".
+</p>
+
+<h3>3.3 Say "Hello" with HTML</h3>
+
+<p>
+  In the last section, our server gave a response using the <code>text/plain</code> format. To provide an HTML response, you'll need to create a view.
+</p>
+
+<p>
+  A view's purpose is to display this information in a human readable format. An important distinction to make is that it is the <i>controller</i>, not the view, where information is collected. The view should just display that information. By default, view templates are written in a language called ecpp (Embedded C++) which is used to generate the C++ code for your views.
+</p>
+
+<p>
+  First, you need to enable ecpp template rendering in your application. To do that, you need to add the <code>crails-html</code> module to your application, by running the following command:
+</p>
+
+<pre><code>$ crails module html install</code></pre>
+
+<p>
+  Now, we'll add a new folder at <code>app/views/welcome</code> to create an ecpp template named <code>app/views/welcome/index.ecpp</code>
+</p>
+
+<pre><code>&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Hello world!&lt;/title&gt;
+  &lt;/head&gt;
+  &lt;body&gt;
+    This view has been generated from an ecpp template.
+  &lt;/body&gt;
+&lt;/html&gt;</code></pre>
+
+<p style="text-align: left">
+  We also need to update our controller at <code>app/controllers/welcome_controller.hpp</code>so that it responds using our view:
+</p>
+
+<pre><code>#ifndef  WELCOME_CONTROLLER_HPP
+# define WELCOME_CONTROLLER_HPP
+
+# include &lt;crails/controller.hpp&gt;
+
+class WelcomeController : public Crails::Controller
+{
+public:
+  WelcomeController(Crails::Params& params) : Crails::Controller(params)
+  {
+  }
+
+  void index()
+  {
+    render("welcome/index");
+  }
+};
+
+#endif</code></pre>
+
+<p>
+  Compile and restart your server, then go to <a href="http://localhost:3000" target="_blank">http://localhost:3000</a> to see that your application now provides an HTML response.
+</p>
+
+<h2>4. Getting Up and Running</h2>
+
+<p>
+  Now that you've seen how to create a controller, an action, and a view, let's create something with a bit more substance.
+</p>
+
+<p>
+  In the Blog application, you will now create a new resource. A resource is the term used for a collection of similar objects, such as articles, people, or animals. You can create, read, update, and destroy items for a resource and these operations are referred to as CRUD operations.
+</p>
+
+<h3>4.1 Setting up a database</h3>
+
+<p>
+Resources need to be persistent, and for that, we will be using an SQL database. The preferred method for that is to use the <a href="https://www.codesynthesis.com/products/odb/" target="_blank">ODB ORM</a>. We provide a module to integrate it with our controller and building system. Let's install it:
+</p>
+
+<pre>$ crails module odb install</pre>
+
+<p>
+  You will be asked which kind of database you wish to use with crails-odb. For this application, we'll use <code>sqlite</code>:
+</p>
+
+<pre>
+Available backends are mysql,pgsql,sqlite,oracle.
+$&gt; sqlite
+</pre>
+
+<p>
+  This will update your CMakeLists.txt to link your application to the odb libraries, adds new pre-compilation tasks in your Guardfile, and adds the odb_migrate task which we'll describe later on.
+</p>
+
+<p>
+  Before we start writings models, we need to set up the configuration for our databases. Open the file <code>config/databases.cpp</code>. You'll see empty configurations for each one of the three environment types provided by Crails: production, development and test. Currently, we're using the development environment, so we'll add the configuration of our sqlite database under the development branch, as following:
+</p>
+
+<pre><code>#include &lt;crails/databases.hpp&gt;
+
+using namespace Crails;
+
+const Databases::Settings Databases::settings = {
+  { "production", {} },
+  {
+    "development", {
+      {
+        "odb", {
+          {"type", "sqlite"}
+          {"name", "blog_dev"}
+        }
+      }
+    }
+  },
+  { "test", {} }
+};
+</code></pre>
+
+<div class="hint-box">
+  Check out the <a href="#">Crails Databases manual</a> to learn more about the configuration options for databases with crails.
+</div>
+
+<h3>4.2 Creating a model</h3>
+
+<p>
+  Now that our database is configured, we will create a new database-backed model. Create the file <code>app/models/article.hpp</code> containing the following code:
+</p>
+
+<pre><code>#ifndef  ARTICLE_HPP
+# define ARTICLE_HPP
+
+# include &lt;crails/odb/model/base.hpp&gt;
+
+# pragma db object pointer(std::shared_ptr)
+class Article : public ODB::ModelBase
+{
+  friend class odb::access;
+  odb_instantiable()
+public:
+  Article() {}
+
+  const std::string& get_title() const { return title; }
+  void set_title(const std::string& value) { title = value; }
+  const std::string& get_content() { return content; }
+  void set_content(const std::string& value) { content = value; }
+
+private:
+  std::string title;
+  std::string content;
+};
+
+#endif</pre></code>
+
+<div class="hint-box">
+  You can learn more about ODB's pragma language in ODB's manual <a href="https://www.codesynthesis.com/products/odb/doc/manual.xhtml#14" target=_blank">ODB Pragma Language section</a>.
+</div>
+
+<p>
+  Also add the corresponding source file at <code>app/models/article.cpp</code>:
+</p>
+
+<pre><code>#include "article.hpp"
+#include "lib/odb/article-odb.hxx"
+
+odb_instantiable_impl(Article)</pre></code>
+
+<p>You see that <code>lib/odb/article-odb.hxx</code> file getting included ? You didn't create it, and you don't need to: this file will be generated by ODB. All your models will have such a file generated for them, and you must include it anywhere you intend to query the database about the corresponding model type. In this specific case, the <code>odb_instantiable_impl()</code> macro requires this inclusion, since it defines persist, update and erase behavior for the Article model.</p>
+
+<p>
+  After adding or editing a model header, we must generate and run a migration on the database. We will first generate our database code using odb:
+</p>
+
+<pre><code>$ crails compile</code></pre>
+
+<div class="hint-box">
+  By default, the <code>crails compile</code> runs all of your project's pre-compiling and compiling tasks. But it can also run tasks individually: for instance, if you want it only to generate your database code, you'd use <code>crails compile crailsodb</code>.
+</div>
+
+<p>
+We can now run the odb_migrate task to apply the new migrations to our database. Since the database doesn't exist yet, we'll use the <code>-c</code> option to have the task create it with the following command:
+</p>
+
+<pre><code>$ build/tasks/odb_migrate/task -c</code></pre>
+
+<h3 id="sec4_3">4.3 Creating views</h3>
+
+<p>
+  Now that we have a model class, we need to add views to display and interact with it. We'll start by creating view templates to create and read Article objects. By convention, we'll create views related to the Article model in the <code>app/views/articles</code> folder.
+</p>
+
+<p>
+  Create the file <code>app/views/articles/add.ecpp</code> that will contain the following form to create new articles:
+</p>
+
+<pre><code class="language-html">&lt;h1&gt;New Article&lt;/h1&gt;
+&lt;form action=&quot;/articles&quot; method=&quot;post&quot;&gt;
+  &lt;p&gt;
+    &lt;label for=&quot;article[title]&quot;&gt;Title&lt;/label&gt;
+    &lt;input type=&quot;text&quot; name=&quot;article[title] /&gt;
+  &lt;/p&gt;
+  &lt;p&gt;
+    &lt;label for=&quot;article[content]&quot;&gt;Content&lt;/label&gt;
+    &lt;textarea name=&quot;article[content]&quot;&gt;&lt;/textare&gt;
+  &lt;/p&gt;
+  &lt;button type=&quot;submit&quot;&gt;Create&lt;/button&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p>
+  Later on, we'll have to match the method and action attribute of the form element to a route within our application. The controller action we'll use will then need to create an article from the form data that it will receive.
+</p>
+
+<p>
+Before we do that, we'll create another view at <code>app/views/articles/show.ecpp</code>, to visualize an existing Article. This time we'll use embedded C++:
+</p>
+
+<pre><code>#include "app/models/article.hpp"
+
+std::shared_ptr&lt;Article&gt; @article;
+// END LINKING
+&lt;h1&gt;&lt;%= article-&gt;get_title() -%&gt;&lt;/h1&gt;
+&lt;p&gt;
+  &lt;%= article-&gt;get_content() %&gt;
+&lt;/p&gt;
+&lt;a href="/articles"&gt;Back&lt;/a&gt;
+</code></pre>
+
+<p>
+  This template is different from the last ones: since we need access to the Article model to display it, we've added a section before the template's html to specify the requirements for the view. We call it the linking section.
+</p>
+
+<p>
+  That linking section always ends with the line <code>// END LINKING</code>. Before that line, you can sepcify the required include file as well as a list of local variables to use within the view template.
+</p>
+
+<p>
+  Here, the linking section includes the <code>app/models/article.hpp</code> header, and defines a <i>bounded</i> variable named <code>article</code>. A bounded variable is a variable that can be initialized from one of your Controllers, and the <code>@</code> before the variable's name is a hint telling the template compiler that the following variable can be bounded.
+</p>
+
+<p>Following the linking section is the actual HTML code for your template view. You'll see that we use <code>&lt;%=</code> and <code>%&gt;</code> markers to inject content from C++ code into the view, such as <code>&lt;%= article.get_content() %&gt;</code>.</p>
+
+<div class="hint-box">
+  You can learn more about ecpp's syntax by reading the <a href="/tutorials/html.html">crails-html guide</a>.
+</div>
+
+<h3>4.4 Setting up CRUD actions</h3>
+
+<p>
+It's now time to write our first controller to implement create, read, update and delete actions for our new model. We'll start with a header file, in <code>app/controllers/articles_controller.hpp</code>:
+</p>
+
+<pre><code>#ifndef  ARTICLES_CONTROLLER_HPP
+# define ARTICLES_CONTROLLER_HPP
+
+# include &lt;crails/odb/controller.hpp&gt;
+# include "app/models/article.hpp"
+
+class ArticlesController : public ODB::Controller
+{
+public:
+  ArticlesController(Crails::Params& params) : Controller(params)
+  {
+  }
+
+  void index()   { render("articles/index"); }
+  void add()     { render("articles/add"); }
+  void show()    { render("articles/show"); }
+  void edit()    { render("articles/show"); }
+  void create()  { render("articles/show"); }
+  void update()  { render("articles/show"); }
+  void destroy() { redirect_to("/articles"); }
+};
+
+#endif
+</code></pre>
+
+<p>
+  Note that to perform SQL queries in your controller, you need to have your controller class inherit from the <code>ODB::Controller</code> class.
+</p>
+
+<p>
+  We then connect those methods to new routes by editing <code>app/routes.cpp</code> as following:
+</p>
+
+<pre><code>#include &lt;crails/router.hpp&gt;
+#include "controllers/articles_controller.hpp"
+
+void Crails::Router::initialize()
+{
+  SetRoute("GET",    "/articles",          ArticlesController, index);
+  SetRoute("GET",    "/articles/add",      ArticlesController, add);
+  SetRoute("GET",    "/articles/:id",      ArticlesController, show);
+  SetRoute("GET",    "/articles/:id/edit", ArticlesController, edit);
+  SetRoute("POST",   "/articles",          ArticlesController, create);
+  SetRoute("PUT",    "/articles/:id",      ArticlesController, update);
+  SetRoute("DELETE", "/articles/:id",      ArticlesController, destroy);
+}
+</code></pre>
+
+<h3>4.5 Saving data in the controller</h3>
+
+<p>
+  Back in <code>ArticlesController</code>, we need to change the <code>create</code> action to use the new <code>Article</code> model to save the data in the database. Open <code>app/controllers/articles_controller.cpp</code> and change the <code>create</code> action to look like this:
+</p>
+
+<pre><code>void create()
+{
+  Article model;
+
+  model.set_title(params["article"]["title"].as&lt;std::string&gt;());
+  model.set_content(params["article"]["content"].as&lt;std::string&gt;());
+  database.save(model);
+  database.commit();
+  redirect_to("/articles/" +
+    boost::lexical_cast&lt;std::string&gt;(model.get_id())
+  );
+}</code></pre>
+
+<p>
+  Here's what's going on: we first retrieve the form data by using the controller's <code>params</code> instance variable. Using it, we initialize our model's title and content attributes. Then, we use the controller's <code>database</code> instance variable to save the model in our sqlite database, and we also call the <code>database.commit()</code> method to commit our changes to the database. You must commit your changes, or they will be rollbacked once you leave your controller's action.
+</p>
+
+<p>
+  Finally, we use the <code>redirect_to</code> controller method to set up a <code>302 Found</code> response redirecting to the new model's show view.
+</p>
+
+<p>
+  Build your server using the <code>crails compile</code>, launch your server with <code>build/server</code> and open <a href="http://localhost:3000/articles/add">http://localhost:3000/articles/add</a>. You should see your the following form:
+</p>
+
+<img src="/images/getting-started/new-article-view.png" />
+
+<p>
+  Try filling the form and submitting it. You should see your first exception page:
+</p>
+
+<img src="/images/getting-started/new-article-exception.png" />
+
+<div class="hint-box">
+  This exception page is provided by crails-html and will appear when using the development environment. It displays details about exception thrown while executing a controller method. Some exception provide backtraces with them. To enable backtracing in your exceptions, you should have your exception class inherit from <code>boost_ext::exception</code> from <code>crails/utils/backtrace.hpp</code>.
+</div>
+
+<p>
+This exception happened because our form didn't provide a CSRF token. The CSRF token is provided throuh an encrypted cookie and allows us to authentify requests and guarantee the origin of POST, PUT and DELETE requests. To avoid this exception being thrown, we'll have to add an input in our Article form to provide a csrf token:
+</p>
+
+<pre><code class="language-html">#include &lt;crails/params.hpp&gt;
+
+Crails::Params&amp; @params;
+// END LINKING
+&lt;h1&gt;New Article&lt;/h1&gt;
+&lt;form action=&quot;/articles&quot; method=&quot;post&quot;&gt;
+  &lt;%= tag(&quot;input&quot;, {
+    {&quot;type&quot;,&quot;hidden&quot;},
+    {&quot;name&quot;,&quot;csrf-token&quot;},
+    {&quot;value&quot;,params.get_session()[&quot;csrf-token&quot;].defaults_to&lt;std::string&gt;(&quot;&quot;)}
+  }) %&gt;
+  &lt;p&gt;
+    &lt;label for=&quot;article[title]&quot;&gt;Title&lt;/label&gt;
+    &lt;input type=&quot;text&quot; name=&quot;article[title]&quot; /&gt;
+  &lt;/p&gt;
+  &lt;p&gt;
+    &lt;label for=&quot;article[content]&quot;&gt;Content&lt;/label&gt;
+    &lt;textarea name=&quot;article[content]&quot;&gt;&lt;/textarea&gt;
+  &lt;/p&gt;
+  &lt;button type=&quot;submit&quot;&gt;Create&lt;/button&gt;
+&lt;/form&gt;
+</code></pre>
+
+<p>
+  In this new version of <code>app/views/articles/add.ecpp</code>, we start by requiring the <code>params</code> attribute from our controller (you do not need to bind it yourself when rendering it: the renderer always makes it available to your views). We then add an hidden input named <code>csrf-token</code>. Finally, we set the value using <code>params.get_session()</code> to access our cookies and retrieve the csrf-token.
+</p>
+
+<h4>4.6 Showing articles</h4>
+
+<p>
+  Now that we can create article, we need to implement <code>ArticlesController::show</code> so that we can display them. Here's what it should look like:
+</p>
+
+<pre><code>void show()
+{
+  std::shared_ptr&lt;Article&gt; model;
+
+  if (!params["id"].is_blank() &amp;&amp;
+      database.find_one(model, params["id"].as&lt;ODB::id_type&gt;()))
+  {
+    render("articles/show", {
+      {"article", model}
+    });
+  }
+  else
+    respond_with(ResponseStatus::not_found);
+}</code></pre>
+
+<p>
+  This time, we start by checking that an <code>id</code> parameter has been provided. We then use <code>database.find_one</code> to fetch the corresponding article. If we can't find one, we use the <code>respond_with</code> controller method to set up a 404 response.
+</p>
+
+<p>
+  Finally, we render the <code>app/view/articles/show.ecpp</code> view. The second parameter in the render method call is used to bind your local variables to the view's, as seen in section <a href="#sec4_3">4.2. Creating views</a>.
+</p>
+
+<h4>4.7 Indexing articles</h4>
+
+<p>
+  Now, we'll implement the index method to list our articles. It's pretty simple:
+</p>
+
+<pre><code>void index()
+{
+  odb::result&lt;Article&gt; results;
+
+  database.find(results);
+  render("articles/index", {
+    {"articles", &amp;results}
+  });
+}</code></pre>
+
+<p>
+  We first make a query to our database and store the results in a <code>odb::result</code> object. We then render the view while binding the results to the <code>articles</code> variable name.
+</p>
+
+<p>
+  Now we need to add a view template. Create the file <code>app/views/articles/index.ecpp</code> as following:
+</p>
+
+<pre><code>#include "app/models/article.hpp"
+#include "lib/odb/article-odb.hxx"
+
+odb::result&lt;Article&gt;&amp; @articles;
+// END LINKING
+&lt;h1&gt;Articles&lt;/h1&gt;
+&lt;a href="/articles/add"&gt;Add an article&lt;/a&gt;
+&lt;table&gt;
+  &lt;tr&gt;
+    &lt;th&gt;Article&lt;/th&gt;
+    &lt;th&gt;Actions&lt;/th&gt;
+  &lt;/tr&gt;
+  &lt;% for (const auto&amp; article : articles) do -%&gt;
+    &lt;tr&gt;
+      &lt;td&gt;
+        &lt;%= article.get_title() %&gt;
+      &lt;/td&gt;
+      &lt;td&gt;
+        &lt;a href="/articles/&lt;%= article.get_id() %&gt;"&gt;Show&lt;/a&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;% end -%&gt;
+&lt;/table&gt;</pre></code>
+
+<p>
+  In this template we use a for loop to iterate over the articles and display them as a list. The <code>do</code> and <code>end</code> replace the <code>{</code> and <code>}</code> delimiters for the loop's scope.
+</p>
+
+<p>
+  Update your server build using the <code>crails compile</code> command and restart your server. Opening the article index at <a href="http://localhost:3000/articles" target="_blank">http://localhost:3000/articles</a>, you should now see something like this:
+</p>
+
+<img src="/images/getting-started/article-index-view.png" />
+
+<p>
+  
+</p>
+
+<h4>4.8 Updating articles</h4>
+
+<p>
+  We've covered the "CR" part of CRUD. Now let's focus on the "U" part, updating articles.
+</p>
+
+<p>
+  The first step we'll take is implementing the <code>edit</code> action in the <code>ArticlesController</code>, as shown:
+</p>
+
+<pre><code>void edit()
+{
+  std::shared_ptr&lt;Article&gt; model;
+
+  if (!params["id"].is_blank() &amp;&amp;
+      database.find_one(model, params["id"].as&lt;ODB::id_type&gt;()))
+  {
+    render("articles/edit", {
+      {"article", model}
+    });
+  }
+  else
+    respond_with(ResponseStatus::not_found);
+}</pre></code>
+
+<p>
+  This action is very similar to the <code>show</code> action. We'll see later how we can factorize it to avoid code repetition.
+</p>
+
+<p>
+  The view will contain a form similar to the one used when creating new articles. Create a file called <code>app/views/articles/edit.ecpp</code> and make it look as follows:
+</p>
+
+<pre><code class="language-html">#include &lt;crails/params.hpp&gt;
+#include &quot;app/models/article.hpp&quot;
+
+Crails::Params&amp; @params;
+std::shared_ptr&lt;Article&gt; @article;
+Data @errors;
+// END LINKING
+&lt;% if (article) do %&gt;
+  &lt;%= tag(&quot;form&quot;, {
+    {&quot;action&quot;,&quot;/articles&quot; + boost::lexical_cast&lt;std::string&gt;(article-&gt;get_id())},
+    {&quot;method&quot;,&quot;put&quot;}
+  }) yields %&gt;
+    &lt;%= tag(&quot;input&quot;, {{&quot;type&quot;,&quot;hidden&quot;}, {&quot;name&quot;,&quot;csrf-token&quot;}, {&quot;value&quot;,params.get_session()[&quot;csrf-token&quot;].defaults_to&lt;std::string&gt;(&quot;&quot;)}}) %&gt;
+    &lt;p&gt;
+      &lt;label for=&quot;article[title]&quot;&gt;Title&lt;/label&gt;
+      &lt;%= tag(&quot;input&quot;, {{&quot;type&quot;,&quot;text&quot;}, {&quot;name&quot;,&quot;article[title]&quot;}, {&quot;value&quot;,article-&gt;get_title()}}) %&gt;
+    &lt;/p&gt;
+    &lt;p&gt;
+      &lt;label for=&quot;article[content]&quot;&gt;Content&lt;/label&gt;
+      &lt;textarea name=&quot;article[content]&quot;&gt;&lt;%= html_escape(article-&gt;get_content()) %&gt;&lt;/textarea&gt;
+    &lt;/p&gt;
+    &lt;button type=&quot;submit&quot;&gt;Edit&lt;/button&gt;
+  &lt;% yend %&gt;
+&lt;% end %&gt;
+</code></pre>
+
+<p>This time we point the form to the <code>update</code> action, which is not yet implemented, but will be very soon.</p>
+
+<p><b>TODO</b> fill in some details here</p>
+
+<p>Next, we need to create the <code>update</code> action in <code>app/controllers/articles_controller.hpp</code>. Implement it as such:</p>
+
+<pre><code>void update()
+{
+  std::shared_ptr&lt;Article&gt; model;
+
+  if (!params["id"].is_blank() &amp;&amp; database.find_one(model, params["id"].as&lt;ODB::id_type&gt;()))
+  {
+    if (params["article"]["title"].exists())
+      model-&gt;set_title(params["article"]["title"]);
+    if (params["article"]["content"].exists())
+      model-&gt;set_content(params["article"]["content"]);
+    database.save(*model);
+    database.commit();
+    redirect_to("/articles/" + params["id"].as&lt;std::string&gt;());
+  }
+  else
+    respond_with(ResponseStatus::not_found);
+}</code></pre>
+
+<p>This new method is used when you want to update a record that already exists, and it accepts a hash containing the attributes that you want to update.</p>
+
+<p><b>TODO</b> fill in some details here</p>
+
+<p>Finally, we want to show a link to the <code>edit</code> action in the list of all articles, so let's add that now to <code>app/views/articles/index.ecpp</code> to make it appear next to the "Show" link:</p>
+
+<pre><code>#include "app/models/article.hpp"
+#include "lib/odb/article-odb.hxx"
+
+odb::result&lt;Article&gt;&amp; @articles;
+// END LINKING
+&lt;h1&gt;Articles&lt;/h1&gt;
+&lt;a href="/articles/add"&gt;Add an article&lt;/a&gt;
+&lt;table&gt;
+  &lt;tr&gt;
+    &lt;th&gt;Article&lt;/th&gt;
+    &lt;th&gt;Actions&lt;/th&gt;
+  &lt;/tr&gt;
+  &lt;% for (const auto&amp; article : articles) do -%&gt;
+    &lt;tr&gt;
+      &lt;td&gt;
+        &lt;%= article.get_title() %&gt;
+      &lt;/td&gt;
+      &lt;td&gt;
+        &lt;a href="/articles/&lt;%= article.get_id() %&gt;"&gt;Show&lt;/a&gt;
+	<b>&lt;a href="/articles/&lt;%= article.get_id() %&gt;/edit"&gt;Edit&lt;/a&gt;</b>
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;% end -%&gt;
+&lt;/table&gt;</pre></code>
+
+<p>And we'll also add one to the <code>app/views/articles/show.ecpp</code> template as well, so that there's also an "Edit" link on an article's page. Add this to the bottom of the template:
+
+<pre><code>...
+
+&lt;a href="/articles"&gt;Back&lt;/a&gt;
+&lt;a href="/articles/&lt;%= article-&gt;get_id() %&gt;/edit"&gt;Edit&lt;/a&gt;
+</pre></code>
+
+<p>And here's how our app looks so far:</p>
+
+<img src="/images/getting-started/article-index-view-2.png" />
+
+<h4>4.9 Using partials to clean up duplication in views</h4>
+
+<p>
+  Our <code>edit</code> page looks very similar to our <code>new</code> page. Let's remove this duplication by using a view partial. By convention, partial files are prefixed with an underscore.
+</p>
+
+<div class="hint-box">You can read more about partials in the <a href="/tutorials/layouts#partial-rendering">crails-html layout and rendering</a> guide.</div>
+
+<p>
+  Create the new file <code>app/views/articles/_form.ecpp</code> with the following content:
+</p>
+
+<pre><code>#include &lt;crails/params.hpp&gt;
+#include "app/models/article.hpp"
+
+Crails::Params&amp; @params;
+std::shared_ptr&lt;Article&gt; @article = nullptr;
+std::stringstream action;
+// END LINKING
+
+&lt;% action &lt;&lt; "/articles" -%&gt;
+&lt;% if (article) do -%&gt;
+  &lt;% action &lt;&lt; '/' &lt;&lt; article-&gt;get_id() -%&gt;
+&lt;% end else do -%&gt;
+  &lt;% article = std::make_shared&lt;Article&gt;() -%&gt;
+&lt;% end -%&gt;
+
+&lt;form action="&lt;%= action.str() %&gt;" method="post"&gt;
+  &lt;input type="hidden" name="csrf-token" value="&lt;%= params.get_session()["csrf_token"].defaults_to&lt;std::string&gt;(""); %&gt;" /&gt;
+  &lt;p&gt;
+    &lt;label for="article[title]"&gt;Title&lt;/label&gt;
+    &lt;input type="text" name="article[title]" value="&lt;%= article-&gt;get_title() %&gt;" /&gt;
+  &lt;/p&gt;
+  &lt;p&gt;
+    &lt;label for="article[content]"&gt;Content&lt;/label&gt;
+    &lt;textarea name="article[content]"&gt;&lt;%= article-&gt;get_content() %&gt;&lt;/textarea&gt;
+  &lt;/p&gt;
+  &lt;button type="submit"&gt;
+    &lt;%= (article-&gt;get_id() == ODB_NULL_ID ? "Create" : "Edit") %&gt;
+  &lt;/button&gt;
+&lt;/form&gt;</code></pre>
+
+<p>
+This form view can handle two different cases:
+<ul>
+  <li>
+    if the variable <code>article</code> is bounded by the controller, it will render an edition form, filling it with the model's values.
+  </li>
+  <li>
+    if it is not set however, it will render a addition form, creating an empty article model, and using it to fill the form with the default values for each field.
+  </li>
+</ul>
+</p>
+
+<p>
+  Now, let's update the <code>app/views/articles/new.ecpp</code> view to use this partial, rewriting it completely:
+</p>
+
+<pre><code>&lt;h1&gt;New Article&lt;/h1&gt;
+&lt;%= partial("articles/_form") %&gt;</code></pre>
+
+<p>
+  Then do the same for the <code>app/views/articles/edit.ecpp</code> view:
+</p>
+
+<pre><code>&lt;h1&gt;Edit article&lt;/h1&gt;
+&lt;%= partial("articles/_form") %&gt;
+</code></pre>
+
+<p>
+  To render <code>app/views/articles/_form.ecpp</code> within these two views, we're calling the <code>partial</code> method. By default, it will forward all of its bounded variables to the partial view.
+</p>
+
+<h4>4.10 Deleting articles</h4>
+
+<p>
+  We're now ready to cover the "D" part of CRUD, deleting articles from the database. Following the REST convention, the route for deleting articles will be the following:
+</p>
+
+<pre><code>SetRoute("DELETE", "/articles/:id", ArticlesController, destroy);</code></pre>
+
+<p>
+  The <code>delete</code> routing method should be used for routes that destroy resources. If this was left as a typical <code>get</code> route, it could be possible for people to craft malicious URLs like this:
+</p>
+
+<pre><code>&lt;a href='http://example.com/articles/1/destroy'&gt;look at this cat!&lt;/a&gt;</code></pre>
+
+<p>
+  We use the <code>delete</code> method for destroying resources, and this route is mapped to the <code>destroy</code> action inside <code>app/controllers/articles_controller.hpp</code>, which doesn't exist yet. The <code>destroy</code> method is generally the last CRUD action in the controller. Let's add it:
+</p>
+
+<pre><code>void destroy()
+{
+  std::shared_ptr&lt;Article&gt; model;
+
+  if (!params["id"].is_blank() &amp;&amp; database.find_one(model, params["id"].as&lt;ODB::id_type&gt;()))
+  {
+    database.destroy(*model);
+    database.commit();
+    redirect_to("/articles");
+  }
+  else
+    respond_with(ResponseStatus::not_found);
+}</code></pre>
+
+<p>
+You can call the <code>database</code>'s <code>template&lt;class MODEL&gt; destroy(MODEL&amp;)</code> method when you want to delete objects them from the database. Note that we don't need to add a view for this action since we're redirecting to the index action.
+</p>
+
+<p>
+Finally, add a 'Destroy' link to your index action template (<code>app/views/articles/index.ecpp</code>) to wrap everything together.
+</p>
+
+<pre><code>
+TODO
+</code></pre>
+
+<div class="hint-box">
+  You can learn more about Unobstrusive JavaScript on <a href="#">Working with JavaScript in Crails</a> guide.
+</div>
+
+<p>
+  Congratulations, you can now create, show, list, update, and destroy articles.
+</p>
+
+<h2>5. Adding a second model</h2>
+<p>
+  It's time to add a second model to the application. The second model will handle comments on articles.
+</p>
+
+<h3>5.1 Adding the comment model</h3>
+
+<p>
+  Create the following file in <code>app/models/comment.hpp</code>:
+</p>
+
+<pre><code class="language-cpp">#ifndef  COMMENT_HTML
+# define COMMENT_HTML
+
+# include &lt;crails/odb/model/base.hpp&gt;
+# include &quot;article.hpp&quot;
+
+# pragma db object pointer(std::shared_ptr)
+class Comment : public ODB::ModelBase
+{
+  friend class odb::access;
+  odb_instantiable()
+public:
+  Comment() {}
+
+  const std::string&amp; get_commenter() const { return commenter; }
+  const std::string&amp; get_body() const { return body; }
+  void set_commenter(const std::string&amp; value) { commenter = value; }
+  void set_body(const std::string&amp; value) { body = value; }
+
+private:
+  std::string commenter;
+  std::string body;
+  std::shared_ptr&lt;Article&gt; article;
+};
+
+#endif
+</code></pre>
+
+<p>
+  And you must also add a source file implementing this model at <code>app/models/comment.cpp</code>:
+</p>
+
+<pre><code class="language-cpp">#include &quot;comment.hpp&quot;
+#include &quot;lib/odb/comment-odb.hxx&quot;
+
+odb_instantiable_impl(Comment)
+</code></pre>
+
+<h3>5.2 Updating the database version</h3>
+
+<p>
+  Now that the model code is ready, before doing anything else, we must update the version number of our database model. This will allow the <code>odb</code> compiler to know which changes must be applied to the database on the next migration.
+</p>
+
+<p>
+  Open <code>config/odb.hpp</code>. Right now, it looks like this
+</p>
+
+<pre><code class="language-cpp">#ifndef  CONFIG_ODB_HPP
+# define CONFIG_ODB_HPP
+
+// Enable schema versioning
+# pragma db model version(1,1)
+
+// Map your odb types here
+# pragma db map type(&quot;INTEGER\[\]&quot;) as(&quot;TEXT&quot;) to(&quot;(?)::INTEGER[]&quot;) from(&quot;(?)::TEXT&quot;)
+
+#endif
+</code></pre>
+
+<p>
+  Everytime you make a change to the database model (by adding a non-transient property on a database object, for instance), you must change the database model version before performing a database migration.
+</p>
+
+<p>
+  To do so, we will change the minor version of our database model by editing <code>pragma db model</code> line to this:
+</p>
+
+<pre><code class="language-cpp"># pragma db model version(1,2)
+</code></pre>
+
+<p>
+  Now that we incremented the version of our database model, we should re-build our server with the following command:
+</p>
+
+<pre><code>$ crails compile</code></pre>
+
+<p>
+  And to finish up, we'll run the migration that will add the table corresponding to our <code>Comment</code> class to the database:
+</p>
+
+<pre><code>$ build/tasks/odb_migrate/task odb</code></pre>
+
+<h3>5.3 Adding a route for comments</h3>
+
+<p>
+  As with the <code>welcome</code> controller, we will need to add a route so that Crails knows where we would like to navigate to see <code>comments</code>. Open up the <code>app/routes.cpp</code> file again, and edit it as follows:
+</p>
+
+<pre><code>SetRoute("POST", "/articles/:article_id/comment", CommentsController, create);</code></pre>
+
+<p>
+  Since the comments will be displayed from the <code>article</code> view, we only need one route for the comments to be added. We also make sure the route includes a parameter for the controller to know on which article it the comment will be added to.
+</p>
+
+<h3>5.4 Adding a Controller</h3>
+
+<p>With the model in hand, you can turn your attention to creating a matching controller</p>
+
+<p>Add the following file at <code>app/controllers/comments_controller.hpp</code>:</p>
+
+<pre><code class="language-cpp">#ifndef  COMMENTS_CONTROLLER_HPP
+# define COMMENTS_CONTROLLER_HPP
+
+# include &lt;crails/controller.hpp&gt;
+# include &quot;lib/odb/comment-odb.hxx&quot;
+# include &quot;lib/odb/article-odb.hxx&quot;
+
+class CommentsController : public Crails::Controller
+{
+public:
+  CommentsController(Crails::Params&amp; params) : Crails::Controller(params)
+  {
+  }
+
+  void create()
+  {
+    std::shared_ptr&lt;Article&gt; article;
+
+    if (database.find_one(article, params[&quot;article_id&quot;].as&lt;ODB::id_type&gt;()))
+    {
+      Data    comment_params = params[&quot;comment&quot;];
+      Comment comment;
+
+      comment.set_article(article);
+      if (comment_params[&quot;commenter&quot;].blank() || comment_params[&quot;body&quot;].blank())
+      {
+        comment.set_commenter(params[&quot;comment&quot;][&quot;commenter&quot;].as&lt;std::string&gt;());
+        comment.set_commenter(params[&quot;comment&quot;][&quot;body&quot;].as&lt;std::string&gt;());
+        database.save(comment);
+        database.commit();
+        redirect_to(&quot;/articles/&quot; + params[&quot;article_id&quot;].as&lt;std::string&gt;());
+      })
+      else
+        render(&quot;articles/show&quot;, {&quot;article&quot;, article});
+    }
+    else
+      respond_with(ResponseStatus::not_found);
+  }
+};
+
+#endif
+</code></pre>
+
+<!--
+<div class="hint-box">
+  You can learn more about how to write database queries with <a href="https://www.codesynthesis.com/products/odb/doc/manual.xhtml#4">ODB's manal «Querying the Database » section</a>.
+</div>
+-->
+
+<h2>10. What's next ?</h2>
+
+<p>Now that you've seen your first Crails application, you should feel free to update it and experiment on your own.</p>
+
+<p>Remember, you don't have to do everything without help. As you need assistance getting up and running with Rails, feel free to consult these support resources:</p>
+
+<ul>
+  <li>The <a href="/tutorials">Crails Guides</li>
+</ul>
+
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

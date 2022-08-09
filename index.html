@@ -1,0 +1,127 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Crails Framework</title>
+    <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="/css/code-qtcreator.css">
+    <script src="/highlight.pack.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="/images/logo.png" />
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/getting-started">Getting started</a></li>
+        <li><a href="/tutorials">Tutorials</a></li>
+	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="main">
+      <h2 id="whats-crails">What’s Crails</h2>
+<p>Crails is a C++ web-application framework that includes everything needed to create database-backed web applications according to the <a href="https://en.wikipedia.org/wiki/Model-view-controller">Model-View-Controller (MVC)</a> pattern.</p>
+
+<p>Understanding the MVC pattern is key to understanding Crails. MVC divides your application into three layers: Model, View and Controller, each with a specific responsability.</p>
+
+<h3 id="model-layer">Model layer</h3>
+<p>The Model layer represents the domain model (such as Account, Product, Person, Post, etc.) and encapsulates the business logic specific to your application. In Crails, database-backed model classes are implemented using the <a href="https://www.codesynthesis.com/products/odb/">ODB orm</a>. ODB allows you to present the data from database rows as objects and embellish these data objects with business logic methods.</p>
+
+<h3 id="controller-layer">Controller layer</h3>
+<p>The Controller layer is responsible for handling incoming HTTP requests and providing a suitable response. Crails controllers can generate JSON, HTML, XML, or any type of response. Controllers load and manipulate models, and render view templates in order to generate the appropriate HTTP response. In Crails, incoming requests are routed by <code>Crails::Router</code> to an appropriate controller, and controller classes are derived from <code>Crails::Controller</code>.</p>
+
+<h3 id="view-layer">View layer</h3>
+<p>The View layer is composed of “templates” that are responsible for providing appropriate representations of your application’s resources. Templates can come in a variety of formats. Crails comes with modules for writing HTML or JSON templates with embedded C++ code. Views are typically rendered to generate a controller response or to generate the body of an email.</p>
+
+<h2 id="framework-and-modules">Framework and modules</h2>
+<p>Crails comes with a small variety of modules providing features commonly needed in web-applications.</p>
+
+<ul>
+  <li><strong>crails-sidekic</strong> adds a service for simple <em>background task processing</em></li>
+  <li><strong>crails-cache</strong> allows you to <em>cache</em> your controller responses using memcached</li>
+  <li><strong>crails-mail</strong> includes a mail client to generate and send <em>raw or html emails</em></li>
+  <li><strong>crails-image</strong> brings features to handles <em>image storage and thumbnail generation</em></li>
+  <li><strong>crails-sentry</strong> handles server <em>errors monitoring</em> through <a href="http://sentry.io/">Sentry</a></li>
+</ul>
+
+<h3 id="code-generation">Code generation</h3>
+<p>Crails provides several code-generating tools, most notably with <strong>MetaRecord</strong> which provides a simple DSL for describing models:</p>
+
+<pre><code>add_include "app/models/degree.hpp"
+
+Model.add "StudentGroup", header: "app/models/student_group.hpp" do
+  resource_name "student_group"
+  property "std::string",    "code"
+  property "std::string",    "name",        validate: { required: true }, db: { type: "TEXT", column: "alt_name" }
+  property "unsigned short", "course",      validate: { required: true }
+  property "bool",           "is_category", db: { default: true }
+
+  has_one "::StudentGroup", "parent", dependent: :destroy, validate: { self_reference: true }
+  has_one "::Degree",       "degree", joined: false, read_only: true
+end
+</code></pre>
+
+<h3 id="frontend-c-development">Frontend C++ development</h3>
+<p>Crails integrates <strong>Comet.cpp</strong>, which uses <a href="https://www.leaningtech.com/pages/cheerp.html">Cheerp</a> to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript, Comet.cpp provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on…</p>
+
+<pre><code>#include &lt;comet/element.hpp&gt;
+#include &lt;comet/globals.hpp&gt;
+
+void webMain()
+{
+  Comet::Element header_element("h1");
+
+  Comet::body &gt; header_element.text("Hello world!");
+}
+</code></pre>
+
+<h2 id="getting-started">Getting started</h2>
+
+<p><strong>1</strong>. Install Crails using one of the following guides:</p>
+
+<ul>
+  <li><a href="/getting-started/ubuntu.html">Ubuntu</a></li>
+  <li><a href="/getting-started/archlinux.html">ArchLinux</a></li>
+</ul>
+
+<p><strong>2</strong>. At the command prompt, create a new Crails application:</p>
+
+<pre><code>crails new my_application
+</code></pre>
+
+<p>Where “my_application” is your application’s name.</p>
+
+<p><strong>3</strong>. Change directory to <code>my_application</code> and compile the application:</p>
+
+<pre><code>cd my_application
+crails compile
+</code></pre>
+
+<p><strong>4</strong>. Run the server</p>
+
+<pre><code>build/server
+</code></pre>
+
+<p><strong>5</strong>. Go to <code>http://localhost:3000</code> and you’ll see: “Welcome to your new Crails Application”.</p>
+
+<h3 id="what-next-">What next ?</h3>
+
+<p>Follow our guides to start developing your application:</p>
+
+<ul>
+  <li><a href="/getting-started">Getting Started with Crails</a></li>
+  <li><a href="/tutorials">Crails Guides</a></li>
+  <li>The API Documentation</li>
+</ul>
+
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

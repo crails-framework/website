@@ -1,0 +1,78 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Installing on ArchLinux</title>
+    <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="/css/code-qtcreator.css">
+    <script src="/highlight.pack.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="/images/logo.png" />
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="/">Home</a></li>
+        <li><a href="/getting-started">Getting started</a></li>
+        <li><a href="/tutorials">Tutorials</a></li>
+	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="main">
+      <h4 id="warning">Warning</h4>
+
+<p>This section is currently under work. The information provided here might not be exhaustive.</p>
+
+<h2 id="archlinux">ArchLinux</h2>
+
+<h3 id="installing-package-dependencies">Installing package dependencies</h3>
+
+<pre><code>sudo pacman -S cmake ruby ruby-bundler ruby-dev boost-libs postgresql-libs
+</code></pre>
+
+<h3 id="building-dependencies">Building dependencies</h3>
+
+<h4 id="build-odb-from-aur">Build ODB from AUR</h4>
+
+<p>You may install the ODB orm using the following packages from AUR <code>libodb</code> <code>libodb-pgsql</code></p>
+
+<h4 id="build-cpp-netlib">Build cpp-netlib</h4>
+
+<pre><code>git clone "https://github.com/cpp-netlib/cpp-netlib.git"
+mkdir cpp-netlib/build
+cd cpp-netlib/build
+git checkout 0.13-release
+git submodule init
+git submodule update
+cmake -DCMAKE_CXX_FLAGS=-std=c++11 \
+      -DCPP-NETLIB_BUILD_TESTS=OFF -DCPP-NETLIB_BUILD_EXAMPLES=OFF -DCPP-NETLIB_BUILD_SHARED_LIBS=ON \
+      -DUri_BUILD_TESTS=OFF -DUri_WARNINGS_AS_ERRORS=OFF \
+      ..
+make
+sudo make install
+</code></pre>
+
+<h3 id="building-crails">Building Crails</h3>
+
+<pre><code>git clone "https://github.com/Plaristote/crails.git"
+mkdir crails/build
+cd crails/build
+cmake -DDEVELOPER_MODE=ON \
+      -DUSE_ODB=ON \
+      -DUSE_COOKIE_CIPHER=OFF \
+      ..
+make
+sudo make install
+</code></pre>
+
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>

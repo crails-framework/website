@@ -1,0 +1,118 @@
+html {
+  box-sizing: border-box; }
+
+body {
+  padding: 0;
+  margin: 0;
+  font-family: sans-serif; }
+
+#header {
+  width: 100%;
+  height: 80px;
+  border-bottom: 2px #fffa6f solid;
+  background: #fffa6f;
+  background: linear-gradient(138deg, #fffa6f 0%, #ffca5b 8%, white 35%, #ffdddd 100%); }
+  #header .logo {
+    display: inline-block;
+    padding: 10px 15px;
+    height: calc(100% - 20px);
+    vertical-align: middle; }
+  #header h1 {
+    display: inline-block;
+    font-size: 2em;
+    vertical-align: middle; }
+  #header .main-menu {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    float: right; }
+    #header .main-menu li {
+      display: inline-block;
+      height: 100%; }
+      #header .main-menu li > a {
+        display: block;
+        height: calc(100% - 60px);
+        border-left: 2px #fffa6f solid;
+        padding: 30px;
+        color: black;
+        font-weight: bold;
+        text-decoration: none; }
+      #header .main-menu li:hover {
+        background-color: #fff956; }
+
+html {
+  height: 100%; }
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit; }
+
+body {
+  position: relative;
+  margin: 0;
+  padding-bottom: 6rem;
+  min-height: 100%; }
+
+#footer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  padding: 1rem;
+  background-color: #3b3434;
+  text-align: center;
+  color: white; }
+  #footer a {
+    color: lightblue; }
+
+#main {
+  padding: 0 20px;
+  width: 630px;
+  margin: auto; }
+  #main h2 {
+    width: 100%;
+    border-bottom: 2px #ebd4d4 solid; }
+  #main p {
+    text-align: justify; }
+  #main a {
+    color: blue; }
+    #main a:hover {
+      font-weight: bold; }
+  #main code, #main pre {
+    padding: 4px;
+    font-family: monospace;
+    line-height: 1.45;
+    background-color: #f6f8fa;
+    border-radius: 3px; }
+  #main pre {
+    padding: 16px;
+    overflow: auto; }
+  #main img {
+    max-width: 100%;
+    margin: 20px 0; }
+
+.hint-box {
+  background-color: #d5e9f6;
+  padding: 20px;
+  width: 100%;
+  min-height: 75px; }
+  .hint-box:before {
+    content: url("/images/information-icon.png");
+    width: 50px;
+    height: 50px;
+    float: left;
+    margin-right: 5px; }
+
+table {
+  margin: 0 0 1.5em;
+  border: 2px solid #CCC;
+  border-collapse: collapse; }
+  table th, table td {
+    padding: 9px 10px;
+    border: 1px solid #CCC;
+    border-collapse: collapse; }
+  table th {
+    border-bottom: 2px solid #CCC;
+    background: #EEE;
+    font-weight: bold; }
