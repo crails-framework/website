@@ -396,19 +396,21 @@ We can now run the odb_migrate task to apply the new migrations to our database.
   Create the file <code>app/views/articles/add.ecpp</code> that will contain the following form to create new articles:
 </p>
 
-<pre><code>&lt;h1&gt;New Article&lt;/h1&gt;
-&lt;form action="/articles" method="post"&gt;
-  &lt;p&gt;
-    &lt;label for="article[title]"&gt;Title&lt;/label&gt;
-    &lt;input type="text" name="article[title]" /&gt;
-  &lt;/p&gt;
-  &lt;p&gt;
-    &lt;label for="article[content]"&gt;Content&lt;/label&gt;
-    &lt;textarea name="article[content]"&gt;&lt;/textarea&gt;
-  &lt;/p&gt;
-  &lt;button type="submit"&gt;Create&lt;/button&gt;
-&lt;/form&gt;
-</code></pre>
+<%= html_block <<HTML
+<h1>New Article</h1>
+<form action="/articles" method="post">
+  <p>
+    <label for="article[title]">Title</label>
+    <input type="text" name="article[title] />
+  </p>
+  <p>
+    <label for="article[content]">Content</label>
+    <textarea name="article[content]"></textare>
+  </p>
+  <button type="submit">Create</button>
+</form>
+HTML
+%>
 
 <p>
   Later on, we'll have to match the method and action attribute of the form element to a route within our application. The controller action we'll use will then need to create an article from the form data that it will receive.
@@ -548,24 +550,30 @@ void Crails::Router::initialize()
 This exception happened because our form didn't provide a CSRF token. The CSRF token is provided throuh an encrypted cookie and allows us to authentify requests and guarantee the origin of POST, PUT and DELETE requests. To avoid this exception being thrown, we'll have to add an input in our Article form to provide a csrf token:
 </p>
 
-<pre><code>#include &lt;crails/params.hpp&gt;
+<%= html_block <<HTML
+#include <crails/params.hpp>
 
-Crails::Params&amp; @params;
+Crails::Params& @params;
 // END LINKING
-&lt;h1&gt;New Article&lt;/h1&gt;
-&lt;form action="/articles" method="post"&gt;
-  &lt;input type="hidden" name="csrf-token" value="&lt;%= params.get_session()["csrf-token"].defaults_to&lt;std::string&gt;("") %&gt;" /&gt;
-  &lt;p&gt;
-    &lt;label for="article[title]"&gt;Title&lt;/label&gt;
-    &lt;input type="text" name="article[title]" /&gt;
-  &lt;/p&gt;
-  &lt;p&gt;
-    &lt;label for="article[content]"&gt;Content&lt;/label&gt;
-    &lt;textarea name="article[content]"&gt;&lt;/textarea&gt;
-  &lt;/p&gt;
-  &lt;button type="submit"&gt;Create&lt;/button&gt;
-&lt;/form&gt;
-</code></pre>
+<h1>New Article</h1>
+<form action="/articles" method="post">
+  <%= tag("input", {
+    {"type","hidden"},
+    {"name","csrf-token"},
+    {"value",params.get_session()["csrf-token"].defaults_to<std::string>("")}
+  }) %\>
+  <p>
+    <label for="article[title]">Title</label>
+    <input type="text" name="article[title]" />
+  </p>
+  <p>
+    <label for="article[content]">Content</label>
+    <textarea name="article[content]"></textarea>
+  </p>
+  <button type="submit">Create</button>
+</form>
+HTML
+%>
 
 <p>
   In this new version of <code>app/views/articles/add.ecpp</code>, we start by requiring the <code>params</code> attribute from our controller (you do not need to bind it yourself when rendering it: the renderer always makes it available to your views). We then add an hidden input named <code>csrf-token</code>. Finally, we set the value using <code>params.get_session()</code> to access our cookies and retrieve the csrf-token.
@@ -695,28 +703,33 @@ odb::result&lt;Article&gt;&amp; @articles;
   The view will contain a form similar to the one used when creating new articles. Create a file called <code>app/views/articles/edit.ecpp</code> and make it look as follows:
 </p>
 
-<pre><code>#include &lt;crails/params.hpp&gt;
+<%= html_block <<HTML
+#include <crails/params.hpp>
 #include "app/models/article.hpp"
 
-Crails::Params&amp; @params;
-std::shared_ptr&lt;Article&gt; @article;
+Crails::Params& @params;
+std::shared_ptr<Article> @article;
 Data @errors;
 // END LINKING
-&lt;% if (article) do %&gt;
-  &lt;form action="/articles/&lt;%= article-&gt;get_id() %&gt;" method="put"&gt;
-    &lt;input type="hidden" name="csrf-token" value="&lt;= params.get_session()["csrf-token"].defaults_to&lt;std::string&gt;("") %&gt;" /&gt;
-    &lt;p&gt;
-      &lt;label for="article[title]"&gt;Title&lt;/label&gt;
-      &lt;input type="text" name="article[title]" value="&lt;%= html_escape(article-&gt;get_title()) %&gt;" /&gt;
-    &lt;/p&gt;
-    &lt;p&gt;
-      &lt;label for="article[content]"&gt;Content&lt;/label&gt;
-      &lt;textarea name="article[content]"&gt;&lt;%= html_escape(article-&gt;get_content()) %&gt;&lt;/textarea&gt;
-    &lt;/p&gt;
-    &lt;button type="submit"&gt;Edit&lt;/button&gt;
-  &lt;/form&gt;
-&lt;% end %&gt;
-</pre></code>
+<% if (article) do %\>
+  <%= tag("form", {
+    {"action","/articles" + boost::lexical_cast<std::string>(article->get_id())},
+    {"method","put"}
+  }) yields %\>
+    <%= tag("input", {{"type","hidden"}, {"name","csrf-token"}, {"value",params.get_session()["csrf-token"].defaults_to<std::string>("")}}) %\>
+    <p>
+      <label for="article[title]">Title</label>
+      <%= tag("input", {{"type","text"}, {"name","article[title]"}, {"value",article->get_title()}}) %\>
+    </p>
+    <p>
+      <label for="article[content]">Content</label>
+      <textarea name="article[content]"><%= html_escape(article->get_content()) %\></textarea>
+    </p>
+    <button type="submit">Edit</button>
+  <% yend %\>
+<% end %\>
+HTML
+%>
 
 <p>This time we point the form to the <code>update</code> action, which is not yet implemented, but will be very soon.</p>
 
@@ -1027,6 +1040,53 @@ HTML
 <h3>5.4 Adding a Controller</h3>
 
 <p>With the model in hand, you can turn your attention to creating a matching controller</p>
+
+<p>Add the following file at <code>app/controllers/comments_controller.hpp</code>:</p>
+
+<%= code_block <<CPP
+#ifndef  COMMENTS_CONTROLLER_HPP
+# define COMMENTS_CONTROLLER_HPP
+
+# include <crails/controller.hpp>
+# include "lib/odb/comment-odb.hxx"
+# include "lib/odb/article-odb.hxx"
+
+class CommentsController : public Crails::Controller
+{
+public:
+  CommentsController(Crails::Params& params) : Crails::Controller(params)
+  {
+  }
+
+  void create()
+  {
+    std::shared_ptr<Article> article;
+
+    if (database.find_one(article, params["article_id"].as<ODB::id_type>()))
+    {
+      Data    comment_params = params["comment"];
+      Comment comment;
+
+      comment.set_article(article);
+      if (comment_params["commenter"].blank() || comment_params["body"].blank())
+      {
+        comment.set_commenter(params["comment"]["commenter"].as<std::string>());
+        comment.set_commenter(params["comment"]["body"].as<std::string>());
+        database.save(comment);
+        database.commit();
+        redirect_to("/articles/" + params["article_id"].as<std::string>());
+      })
+      else
+        render("articles/show", {"article", article});
+    }
+    else
+      respond_with(ResponseStatus::not_found);
+  }
+};
+
+#endif
+CPP
+%>
 
 <!--
 <div class="hint-box">
