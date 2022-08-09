@@ -1,0 +1,366 @@
+---
+title: Crails Routing from the Outside In
+---
+
+<h2>1. The purpose of the Crails Router</h2>
+<p>
+  The Crails router recognizes URLs and dispatches them to a controller's action, or to custom lambdas.
+</p>
+
+<h3>1.1 Connecting URLs to code</h3>
+<p>
+  When your Crails application receives an incoming request for:
+</p>
+
+<%= html_block <<HTML
+GET /patients/17
+HTML
+%>
+
+<p>
+  it asks the router to match it to a controller action. If the first matching route is:
+</p>
+
+<%= code_block <<HTML
+  match_action("GET", "/patients/:id", PatientController, show);
+HTML
+%>
+
+<p>
+  the request is dispatched to the <code>PatientController</code> controller's <code>show</code> method with
+  <code>{ "id": "17" }</code> in <code>params</code>.
+</p>
+
+<h3>1.2 Configuring the Crails Router</h3>
+<p>
+  The routes for your application or engine live in the file <code>app/routes.cpp</code>
+  and typically look like this:
+</p>
+
+<%= code_block <<CPP
+#include <crails/router.hpp>
+#include "controllers/brands.hpp"
+#include "controllers/products.hpp"
+
+void Crails::Router::initialize()
+{
+  match_action("GET", "brands", Brands, index);
+  scope("brands/:brand_id", [&]()
+  {
+    match_action("GET", "", Brands, show);
+    resource_actions("products", Products);
+  });
+}
+CPP
+%>
+
+<h3>1.3 Using the router without controllers</h3>
+<p>
+  For some simple web application, you might want to strip the controller layer altogether and
+  directly handle queries using functions or lambdas. Here's an example of route matching using
+  lambdas:
+</p>
+
+<%= code_block <<CPP
+void hello_world(Crails::Request& request, std::function<void()> callback)
+{
+  request.response.set_headers("Content-Type", "text/plain");
+  request.response.set_response(
+    Crails::HttpStatus::ok,
+    "Hello world !"
+  );
+  callback();
+}
+
+void Crails::Router::initialize()
+{
+  match("GET", "hello_world", hello_world);
+}
+CPP
+%>
+
+<div class="hint-box">
+  The <i>callback</i> parameter can be used to handle queries asynchronously. You may call it at the
+  end of your route handler, like in the example above, or pass it to another thread and call it later.
+  Note that you <i>must</i> keep around a reference to the <code>Request</code> object as a shared pointer,
+  so that it doesn't get deleted. Use <code>request.shared_from_this()</code> to that end.
+</div>
+
+<h2>2. Resource Routing</h2>
+<p>
+  Resource routing allows you to quickly declare all of the common routes for a given resourceful controller.
+  A single call to resources can declare all of the necessary routes for your
+  <code>index</code>, <code>show</code>, <code>new</code>, <code>edit</code>,
+  <code>create</code>, <code>update</code>, and <code>destroy</code> actions.
+</p>
+
+<h3>2.1 Resources on the web</h3>
+<p>
+  Browsers request pages from Crails by making a request for a URL using a specific HTTP method,
+  such as <code>GET</code>, <code>POST</code>, <code>PATCH</code>, <code>PUT</code>, and <code>DELETE</code>.
+  Each method is a request to perform an operation on the resource. A resource route maps a number of related
+  requests to actions in a single controller.
+</p>
+
+<p>
+  When your Rails application receives an incoming request for:
+</p>
+
+<%= code_block <<CPP
+DELETE /photos/17
+CPP
+%>
+
+<p>
+  it asks the router to map it to a controller action. If the first matching route is:
+</p>
+
+<%= code_block <<CPP
+resource_actions("photos", PhotosController);
+CPP
+%>
+
+<p>
+  Crails would dispatch that request to the <code>destroy</code> method on PhotosController with
+  <code>{ id: "17" }</code> in <code>params</code>.
+</p>
+
+<h3>2.2 CRUD, Verbs and Actions</h3>
+<p>
+  In Rails, a resourceful route provides a mapping between HTTP verbs and URLs to controller actions.
+  By convention, each action also maps to a specific CRUD operation in a database.
+  A single entry in the routing file, such as:
+</p>
+
+<%= code_block <<CPP
+resource_actions("photos", PhotosController);
+CPP
+%>
+
+<p>
+  creates seven different routes in your application, all mapping to the <code>PhotosController</code>:
+</p>
+
+<table>
+  <tr>
+    <th>HTTP Verb</th>
+    <th>Path</th>
+    <th>Controller::Action</th>
+    <th>Used for</th>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/photos</td>
+    <td>PhotosController::index</td>
+    <td>display a list of all photos</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/photos/new</td>
+    <td>PhotosController::new_</td>
+    <td>return an HTML form for creating a new photo</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/photos</td>
+    <td>PhotosController::create</td>
+    <td>create a new photo</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/photos/:id</td>
+    <td>PhotosController::show</td>
+    <td>display a specific photo</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/photos/:id/edit</td>
+    <td>PhotosController::edit</td>
+    <td>return an HTML form for editing a photo</td>
+  </tr>
+  <tr>
+    <td>PUT</td>
+    <td>/photos/:id</td>
+    <td>PhotosController::update</td>
+    <td>update a specific photo</td>
+  </tr>
+  <tr>
+    <td>DELETE</td>
+    <td>/photos/:id</td>
+    <td>PhotosController::destroy</td>
+    <td>delete a specific photo</td>
+  </tr>
+</table>
+
+<div class="hint-box">
+  Because the router uses the HTTP verb and URL to match inbound requests, four URLs map to seven different actions.
+</div>
+
+<div class="hint-box">
+  Crails routes are matched in the order they are specified, so if you have a
+  <code>resource_actions("photos", PhotosController)</code> above a
+  <code>match_action("GET", "photos/poll", PhotosController, poll)</code>, the <code>show</code> action's route
+  for the resource_action line will be matched before the <code>match_action</code> line.
+  To fix this, move the <code>match_action</code> line above the <code>resource_actions</code> line so that it
+  is matched first.
+</div>
+
+<h2>2.3 CRUD-only</h2>
+<p>
+  <code>resource_actions</code> is better fitted for HTML applications. When developing a web API, you
+  will probably be only interested in CRUD actions. In which case, you should use <code>crud_actions</code>:
+</p>
+
+<%= code_block <<CPP
+  crud_actions("photos", PhotosController);
+CPP
+%>
+
+<p>
+  This helper works the same as <code>resource_actions</code>, but strips away the <code>edit</code> and
+  <code>new_</code> routes, which you won't need in an API.
+</p>
+
+<h2>2.4 Scopes and Routing</h2>
+<p>
+  You may wish to organize groups of controllers under a scope. Most commonly, you might group a number of
+  administrative controllers under an <code>admin</code> scope.
+</p>
+
+<%= code_block <<CPP
+scope("admin", [this]()
+{
+  resource_actions("articles", Admin::ArticlesController);
+  resource_actions("comments", Admin::CommentsController);
+});
+CPP
+%>
+
+<p>
+  This will create a number of routes for each of the articles and comments controller.
+  For <code>Admin::ArticlesController</code>, Rails will create:
+</p>
+
+<table>
+  <tr>
+    <th>HTTP Verb</th>
+    <th>Path</th>
+    <th>Controller::Action</th>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/admin/articles</td>
+    <td>Admin::ArticlesController::index</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/admin/articles/new</td>
+    <td>Admin::ArticlesController::new_</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/admin/articles</td>
+    <td>Admin::ArticlesController::create</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/admin/articles/:id</td>
+    <td>Admin::ArticlesController::show</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/admin/articles/:id/edit</td>
+    <td>Admin::ArticlesController::edit</td>
+  </tr>
+  <tr>
+    <td>PUT</td>
+    <td>/admin/articles/:id</td>
+    <td>Admin::ArticlesController::update</td>
+  </tr>
+  <tr>
+    <td>DELETE</td>
+    <td>/admin/articles/:id</td>
+    <td>Admin::ArticlesController::destroy</td>
+  </tr>
+</table>
+
+<h2>3. Non-Resourceful Routes</h2>
+<h3>3.1 Bound parameters</h3>
+<p>
+  When you set up a regular route, you supply a series of symbols that Crails maps to parts of an
+  incoming HTTP request. For example, consider this route:
+</p>
+
+<%= code_block <<CPP
+match_action("GET", "/photos(/:id)?", PhotosController, display);
+CPP
+%>
+
+<p>
+  If an incoming request of <code>/photos/1</code> is processed by this route (because it hasn't matched any
+  previous route in the file), then the result will be to invoke the <code>display</code> method of the
+  <code>PhotosController</code>, and to make the final parameter <code>"1"</code> available as
+  <code>params["id"]</code>.
+  This route will also route the incoming request of <code>/photos</code> to <code>PhotosController::display</code>,
+  since <code>:id</code> is an optional parameter, denoted by question mark after the parentheses section.
+</p>
+
+<h3>3.2 Dynamic segments</h3>
+<p>
+  You can set up as many dynamic segments within a regular route as you like. Any segment will be available
+  to the action as part of <code>params</code>. If you set up this route:
+</p>
+
+<%= code_block <<CPP
+match_action("GET", "/photos/:id/:user_id", PhotosController, show);
+CPP
+%>
+
+<p>
+  An incoming path of <code>/photos/1/2</code> will be dispatched to the show action of the
+  <code>PhotosController</code>. <code>params["id"]</code> will be <code>"1"</code>, and
+  <code>params["user_id"]</code> will be <code>"2"</code>.
+</p>
+
+
+<h3>3.3 Static segments</h3>
+<p>
+  You can specify static segments when creating a route by not prepending a colon to a segment:
+</p>
+
+<%= code_block <<CPP
+match_action("GET", "/photos/:id/with_user/:user_id", PhotosController, show);
+CPP
+%>
+
+<p>
+  This route would respond to paths such as <code>/photos/1/with_user/2</code>.
+  In this case, params would be <code>{ id: "1", user_id: "2" }</code>.
+</p>
+
+<h3>3.4 The Query String</h3>
+<p>
+  The <code>params</code> will also include any parameters from the query string. For example, with this route:
+</p>
+
+<%= code_block <<CPP
+  match_action("GET", "/photos/:id", PhotosController, show);
+CPP
+%>
+
+<p>
+  An incoming path of <code>/photos/1?user_id=2</code> will be dispatched to the show method of PhotosController.
+  <code>params</code> will be <code>{ id: "1", user_id: "2" }</code>.
+</p>
+
+<h3>3.5 HTTP Verb Constraints</h3>
+<p>
+  In general, you should use the GET, POST, PUT, PATCH, and DELETE methods to constrain a route to a particular
+  verb. You can also left the verb parameter unspecified to match every verbs at once:
+</p>
+
+<%= code_block <<CPP
+  match_action("", "/photos", PhotosController, show);
+CPP
+%>
+
