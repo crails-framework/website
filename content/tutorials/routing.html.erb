@@ -2,6 +2,8 @@
 title: Crails Routing from the Outside In
 ---
 
+<div id="with-index"></div>
+
 <h2>1. The purpose of the Crails Router</h2>
 <p>
   The Crails router recognizes URLs and dispatches them to a controller's action, or to custom lambdas.
@@ -125,7 +127,7 @@ CPP
   <code>{ id: "17" }</code> in <code>params</code>.
 </p>
 
-<h3>2.2 CRUD, Verbs and Actions</h3>
+<h3 id="resource_actions">2.2 CRUD, Verbs and Actions</h3>
 <p>
   In Rails, a resourceful route provides a mapping between HTTP verbs and URLs to controller actions.
   By convention, each action also maps to a specific CRUD operation in a database.
