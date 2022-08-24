@@ -11,6 +11,7 @@ body {
 @import "header";
 @import "footer";
 @import "markdown";
+@import "sidebar";
 
 .hint-box {
   background-color: #d5e9f6;
@@ -42,4 +43,16 @@ table {
     background: #EEE;
     font-weight: bold;
   }
+}
+
+p {
+  line-height: 25px;
+}
+
+#content-wrapper {
+  text-align: center;
+}
+
+#main {
+  display: inline-block;
 }

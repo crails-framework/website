@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/css/application.css">
     <link rel="stylesheet" href="/css/code-qtcreator.css">
     <script src="/highlight.pack.js"></script>
+    <script src="/js/index.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
     <meta name="generator" content="Nanoc <%= Nanoc::VERSION %>">
@@ -21,8 +22,10 @@
 	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
       </ul>
     </div>
-    <div id="main">
-      <%= yield %>
+    <div id="content-wrapper">
+      <div id="main">
+        <%= yield %>
+      </div>
     </div>
     <div id="footer">
       This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
