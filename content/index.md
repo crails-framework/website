@@ -63,14 +63,14 @@ Crails integrates **Comet.cpp**, which uses [Cheerp](https://www.leaningtech.com
 
 **2**. At the command prompt, create a new Crails application:
 
-	crails new my_application
+	crails new --name my_application
 
 Where "my_application" is your application's name.
 
 **3**. Change directory to `my_application` and compile the application:
 
 	cd my_application
-	crails compile
+	crails build
 
 **4**. Run the server
 
