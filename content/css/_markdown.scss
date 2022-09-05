@@ -1,9 +1,11 @@
 @import "colors";
+$block-padding: 16px;
 
 #main {
   padding: 0 20px;
   width: 630px;
   margin: auto;
+  text-align: left;
 
   h2 {
     width: 100%;
@@ -25,17 +27,24 @@
     padding: 4px;
     font-family: monospace;
     line-height: 1.45;
-    background-color: #f6f8fa;
+    background-color: #eee;
     border-radius: 3px;
   }
 
   pre {
-    padding: 16px;
+    padding: $block-padding;
     overflow: auto;
   }
 
   img {
     max-width: 100%;
     margin: 20px 0;
+  }
+
+  pre.filepath {
+    color: gray;
+    border-bottom: dotted grey 2px;
+    margin-bottom: #{-$block-padding + 3px};
+    padding: 0 $block-padding;
   }
 }

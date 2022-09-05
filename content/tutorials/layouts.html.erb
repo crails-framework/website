@@ -170,7 +170,7 @@ using namespace std;
 
 string @message = "Hi HTML template !";
 // END LINKING
-<p><%= @message %%></p>
+<p><%= message %%></p>
 HTML
 %>
 
@@ -193,8 +193,9 @@ HTML
 
 <h3>2.3 Sharing variables with a view</h3>
 <p>
-  When rendered from a Crails controller, views will used by default the controller's
-  shared variable set, accessible from the controller as Crails::Controller::vars.
+  When rendered from a Crails controller, views will use the controller's
+  shared variable set by default, which is accessible from the controller as
+  <code>Crails::Controller::vars</code>.
 </p>
 
 <p>
@@ -231,7 +232,7 @@ HTML
 </p>
 
 <p>
-  There is another way to pass variables to a view:
+  Here is another way to pass variables to a view:
 </p>
 
 <%= code_block <<HTML
@@ -260,8 +261,8 @@ HTML
 
 <p>
   In this example, we send our variables directly to the controller's renderer. The controller's own variable
-  will still be shared with the views, but the variables sent as parameter will also be available, and will
-  temporarily overwrite the controller's own variable when relevant.
+  will still be shared with the views, but the variables sent as parameter will also be available. When some
+  variable names overlap, the ones sent as parameters will override the controller's.
 </p>
 
 <h3 id="partial-rendering">2.4 Partial rendering</h3>
