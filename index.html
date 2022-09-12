@@ -1,28 +1,28 @@
-<!DOCTYPE HTML>
-<html lang="en">
-  <head>
+<!DOCTYPE html><html lang="en"><head>
     <meta charset="utf-8">
     <title>Crails Framework - Crails Framework</title>
-    <link rel="stylesheet" href="/css/application.css">
-    <link rel="stylesheet" href="/css/code-qtcreator.css">
-    <script src="/highlight.pack.js"></script>
+    <link rel="stylesheet" href="css/application.css">
+    <link rel="stylesheet" href="css/code-qtcreator.css">
+    <script src="highlight.pack.js"></script>
+    <script src="js/index.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
     <meta name="generator" content="Nanoc 4.12.7">
   </head>
   <body>
     <div id="header">
-      <img class="logo" src="/images/logo.png" />
+      <img class="logo" src="images/logo.png">
       <h1>Crails Framework</h1>
       <ul class="main-menu">
-        <li><a href="/">Home</a></li>
-        <li><a href="/getting-started">Getting started</a></li>
-        <li><a href="/tutorials">Tutorials</a></li>
-	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+        <li><a href="./">Home</a></li><li>
+            <a href="getting-started">Getting started</a></li><li>
+            <a href="tutorials">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
       </ul>
     </div>
-    <div id="main">
-      <h2 id="whats-crails">What’s Crails</h2>
+    <div id="content-wrapper">
+      <div id="main">
+        <h2 id="whats-crails">What’s Crails</h2>
 <p>Crails is a C++ web-application framework that includes everything needed to create database-backed web applications according to the <a href="https://en.wikipedia.org/wiki/Model-view-controller">Model-View-Controller (MVC)</a> pattern.</p>
 
 <p>Understanding the MVC pattern is key to understanding Crails. MVC divides your application into three layers: Model, View and Controller, each with a specific responsability.</p>
@@ -83,13 +83,13 @@ void webMain()
 <p><strong>1</strong>. Install Crails using one of the following guides:</p>
 
 <ul>
-  <li><a href="/getting-started/ubuntu.html">Ubuntu</a></li>
-  <li><a href="/getting-started/archlinux.html">ArchLinux</a></li>
+  <li><a href="getting-started/linux.html">Linux</a></li>
+  <li>Windows (not yet available)</li>
 </ul>
 
 <p><strong>2</strong>. At the command prompt, create a new Crails application:</p>
 
-<pre><code>crails new my_application
+<pre><code>crails new --name my_application
 </code></pre>
 
 <p>Where “my_application” is your application’s name.</p>
@@ -97,7 +97,7 @@ void webMain()
 <p><strong>3</strong>. Change directory to <code>my_application</code> and compile the application:</p>
 
 <pre><code>cd my_application
-crails compile
+crails build
 </code></pre>
 
 <p><strong>4</strong>. Run the server</p>
@@ -112,16 +112,18 @@ crails compile
 <p>Follow our guides to start developing your application:</p>
 
 <ul>
-  <li><a href="/getting-started">Getting Started with Crails</a></li>
-  <li><a href="/tutorials">Crails Guides</a></li>
+  <li><a href="getting-started">Getting Started with Crails</a></li>
+  <li><a href="tutorials">Crails Guides</a></li>
   <li>The API Documentation</li>
 </ul>
 
+      </div>
     </div>
     <div id="footer">
-      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
       It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
     </div>
     <script>hljs.initHighlightingOnLoad();</script>
-  </body>
-</html>
+  
+
+</body></html>

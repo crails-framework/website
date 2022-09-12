@@ -1,28 +1,30 @@
-<!DOCTYPE HTML>
-<html lang="en">
-  <head>
+<!DOCTYPE html><html lang="en"><head>
     <meta charset="utf-8">
     <title>Crails Framework - Crails Framework: Layout and rendering</title>
-    <link rel="stylesheet" href="/css/application.css">
-    <link rel="stylesheet" href="/css/code-qtcreator.css">
-    <script src="/highlight.pack.js"></script>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
     <meta name="generator" content="Nanoc 4.12.7">
   </head>
   <body>
     <div id="header">
-      <img class="logo" src="/images/logo.png" />
+      <img class="logo" src="../../images/logo.png">
       <h1>Crails Framework</h1>
       <ul class="main-menu">
-        <li><a href="/">Home</a></li>
-        <li><a href="/getting-started">Getting started</a></li>
-        <li><a href="/tutorials">Tutorials</a></li>
-	<li><a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
       </ul>
     </div>
-    <div id="main">
-      <h2>1. Rendering</h2>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. Rendering</h2>
 <h3>1.1 Creating a view</h3>
 <p>
   Crails views are created from a view template, stored in the <code>app/views</code> folder.
@@ -71,12 +73,12 @@
 class HomeController : public Crails::Controller
 {
 public:
-  HomeController(Crails::Request&amp; request) : Crails::Controller(request)
+  HomeController(Crails::Context&amp; context) : Crails::Controller(context)
   {}
 
   void index()
   {
-    render(&quot;home/index&quot;); // will render app/views/home/index.ecpp
+    render("home/index"); // will render app/views/home/index.ecpp
   }
 };
 
@@ -103,12 +105,12 @@ public:
 class HomeController : public Crails::Controller
 {
 public:
-  HomeController(Crails::Request&amp; request) : Crails::Controller(request)
+  HomeController(Crails::Context&amp; context) : Crails::Controller(context)
   {}
 
   void index()
   {
-    HtmlRenderer().render_template(&quot;home/index&quot;, this-&gt;response);
+    Crails::HtmlRenderer().render_template("home/index", this-&gt;response);
   }
 };
 
@@ -121,11 +123,26 @@ public:
   in which the view will be rendered.
 </p>
 
-<div class="hint-box">
-  If you don't want to render the template to a response object, you can replace that parameter
-  with an object of your own: it is expected to implement the <i>RenderTarget</i> interface,
-  which you can check out in <code>crails/render_target.hpp</code>.
-</div>
+<h3>1.3 Rendering a view to a string</h3>
+<p>
+  The previous method renders the view directly to the HTTP response object. But you may also want to
+  render a view without necessarily sending it as a response. In the following example, we'll store the
+  result in a <code>RenderString</code> before setting a response:
+</p>
+
+<pre><code class="language-cpp">void index()
+{
+  Crails::RenderString result;
+
+  Crails::HtmlRenderer().render_template("home/index", result);
+  response.set_body(result.value().data(), result.value().length());
+}
+</code></pre>
+
+<p>
+  <code>RenderString::value()</code> returns a <code>std::string_view</code> containing the
+  rendered view.
+</p>
 
 <h2>2. Templates</h2>
 <h3>2.1 Linking section</h3>
@@ -136,7 +153,7 @@ public:
 
 <pre><code class="language-html">using namespace std;
 
-string message = &quot;Hi HTML template !&quot;;
+string message = "Hi HTML template !";
 // END LINKING
 &lt;p&gt;&lt;%= message %&gt;&lt;/p&gt;
 </code></pre>
@@ -160,9 +177,9 @@ string message = &quot;Hi HTML template !&quot;;
 
 <pre><code class="language-html">using namespace std;
 
-string @message = &quot;Hi HTML template !&quot;;
+string @message = "Hi HTML template !";
 // END LINKING
-&lt;p&gt;&lt;%= @message %&gt;&lt;/p&gt;
+&lt;p&gt;&lt;%= message %&gt;&lt;/p&gt;
 </code></pre>
 
 <p>
@@ -177,15 +194,16 @@ string @message = &quot;Hi HTML template !&quot;;
 
 <div class="hint-box">
   Note that if we do not provide a default initializer to a shared variable, then trying to render the template
-  without providing a value for the variable will result in an <i>out_of_range</i> exception.<br/>
+  without providing a value for the variable will result in an <i>out_of_range</i> exception.<br>
   Similarly, if you provide a value to the variable, but the typeid does not match the one used in the template,
   a <i>runtime_error</i> exception will be thrown.
 </div>
 
 <h3>2.3 Sharing variables with a view</h3>
 <p>
-  When rendered from a Crails controller, views will used by default the controller's
-  shared variable set, accessible from the controller as Crails::Controller::vars.
+  When rendered from a Crails controller, views will use the controller's
+  shared variable set by default, which is accessible from the controller as
+  <code>Crails::Controller::vars</code>.
 </p>
 
 <p>
@@ -200,13 +218,13 @@ string @message = &quot;Hi HTML template !&quot;;
 class HomeController : public Crails::Controller
 {
 public:
-  HomeController(Crails::Request&amp; request) : Crails::Controller(request)
+  HomeController(Crails::Context&amp; context) : Crails::Controller(context)
   {}
 
   void index()
   {
-    vars[&quot;message&quot;] = std::string(&quot;Howdy, little birdie !&quot;);
-    render(&quot;home/index&quot;);
+    vars["message"] = std::string("Howdy, little birdie !");
+    render("home/index");
   }
 };
 
@@ -220,7 +238,7 @@ public:
 </p>
 
 <p>
-  There is another way to pass variables to a view:
+  Here is another way to pass variables to a view:
 </p>
 
 <pre><code class="language-cpp">#ifndef  HOME_CONTROLLER_HPP
@@ -231,13 +249,13 @@ public:
 class HomeController : public Crails::Controller
 {
 public:
-  HomeController(Crails::Request&amp; request) : Crails::Controller(request)
+  HomeController(Crails::Context&amp; context) : Crails::Controller(context)
   {}
 
   void index()
   {
-    render(&quot;home/index&quot;, {
-      {&quot;message&quot;, std::string(&quot;Howdy, little birdie !&quot;)}
+    render("home/index", {
+      {"message", std::string("Howdy, little birdie !")}
     });
   }
 };
@@ -247,8 +265,8 @@ public:
 
 <p>
   In this example, we send our variables directly to the controller's renderer. The controller's own variable
-  will still be shared with the views, but the variables sent as parameter will also be available, and will
-  temporarily overwrite the controller's own variable when relevant.
+  will still be shared with the views, but the variables sent as parameter will also be available. When some
+  variable names overlap, the ones sent as parameters will override the controller's.
 </p>
 
 <h3 id="partial-rendering">2.4 Partial rendering</h3>
@@ -259,10 +277,10 @@ public:
 
 <pre><code class="language-html">using namespace std;
 
-string message = &quot;Hi HTML template !&quot;;
+string message = "Hi HTML template !";
 // END LINKING
 &lt;h1&gt;&lt;%= message %&gt;&lt;/h1&gt;
-&lt;%= partial(&quot;home/partial&quot;); %&gt;
+&lt;%= partial("home/partial"); %&gt;
 </code></pre>
 
 <p>
@@ -272,10 +290,10 @@ string message = &quot;Hi HTML template !&quot;;
 
 <pre><code class="language-html">using namespace std;
 
-string message = &quot;Hi HTML template !&quot;;
+string message = "Hi HTML template !";
 // END LINKING
 &lt;h1&gt;&lt;%= message %&gt;&lt;/h1&gt;
-&lt;%= partial(&quot;home/partial&quot;, {{&quot;variable&quot;, message.length()}); %&gt;
+&lt;%= partial("home/partial", {{"variable", message.length()}); %&gt;
 </code></pre>
 
 <h2>3. Layouts</h2>
@@ -320,14 +338,14 @@ string message = &quot;Hi HTML template !&quot;;
 class HomeController : public Crails::Controller
 {
 public:
-  HomeController(Crails::Request&amp; request) : Crails::Controller(request)
+  HomeController(Crails::Context&amp; context) : Crails::Controller(context)
   {
-    vars[&quot;layout&quot;] = std::string(&quot;home/my_layout&quot;);
+    vars["layout"] = std::string("home/my_layout");
   }
 
   void index()
   {
-    render(&quot;home/index&quot;);
+    render("home/index");
   }
 };
 
@@ -340,18 +358,19 @@ public:
 
 <pre><code class="language-cpp">  void index()
   {
-    render(&quot;home/index&quot;, {
-      {&quot;layout&quot;, std::string(&quot;home/my_layout&quot;)}
+    render("home/index", {
+      {"layout", std::string("home/my_layout")}
     });
   }
-#endif
 </code></pre>
 
+      </div>
     </div>
     <div id="footer">
-      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
       It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
     </div>
     <script>hljs.initHighlightingOnLoad();</script>
-  </body>
-</html>
+  
+
+</body></html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Installing on Linux</title>
+    <link rel="stylesheet" href="../css/application.css">
+    <link rel="stylesheet" href="../css/code-qtcreator.css">
+    <script src="../highlight.pack.js"></script>
+    <script src="../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../">Home</a></li><li>
+            <a href=".">Getting started</a></li><li>
+            <a href="../tutorials">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <h1 id="installing-on-linux">Installing on Linux</h1>
+
+<h2 id="preparing-a-build-environment">Preparing a build environment</h2>
+
+<p>Crails uses the build2 build system, which will take care of managing dependencies and packaging
+the Crails for your development or production environments.</p>
+
+<h3 id="installing-build2">Installing build2</h3>
+
+<p>Let’s start by installing build2:</p>
+
+<pre><code>export BUILD2_VERSION="0.15.0"
+curl -sSfO https://download.build2.org/$BUILD2_VERSION/build2-install-$BUILD2_VERSION.sh
+chmod +x build2-install-$BUILD2_VERSION.sh
+sh build2-install-$BUILD2_VERSION.sh
+</code></pre>
+
+<h3 id="preparing-a-package">Preparing a package</h3>
+
+<p>Now that build2 is installed, we’ll create a package configuration. Here’s an example of
+what we would do to prepare a build using g++ and installing at <code>/usr/local</code>:</p>
+
+<pre><code>bpkg create -d build-crails cc \
+  config.cxx=g++ \
+  config.cc.coptions=-O3 \
+  config.install.root=/usr/local \
+  config.install.sudo=sudo
+</code></pre>
+
+<p>This will create the <code>build-crails</code> directory where we’ll build crails and its dependencies.</p>
+
+<h2 id="installing-crails">Installing Crails</h2>
+
+<p>We will now install the Crails CLI (Command Line Interface) along with <code>libcrails</code> (the core
+library for the crails framework).</p>
+
+<h3 id="adding-repositories">Adding repositories</h3>
+
+<p>We need to add repositories which build2 will use to fetch the code from both crails and its dependencies:</p>
+
+<pre><code>bpkg add https://pkg.cppget.org/1/beta
+  	bpkg add "https://github.com/crails-framework/crails.git#2.0.0"
+  	bpkg add "https://github.com/crails-framework/libcrails.git#2.0.0"
+</code></pre>
+
+<p>Note how we added a version tag after “crails.git” and “libcrails.git”.
+Change that tag to the version you wish to use (such as master if you want to build the current development version of crails).</p>
+
+<h4 id="downloading-the-code">Downloading the code</h4>
+
+<p>Now that we have added all the repositories we may need, run the following command to fetch
+the code. This will take a short while:</p>
+
+<pre><code>bpkg fetch
+</code></pre>
+
+<h3 id="building-crails">Building crails</h3>
+
+<p>The code is here. Let’s build it:</p>
+
+<pre><code>bpkg build crails # Command Line Interface
+bpkg build libcrails # core library
+</code></pre>
+
+<h3 id="installing-to-the-system">Installing to the system</h3>
+
+<p>Last step, we’ll install it all to <code>/usr/local</code>, as configured when we ran <code>bpkg create</code>.</p>
+
+<pre><code>bpkg install --all --recursive
+</code></pre>
+
+<h2 id="installing-optional-dependencies">Installing optional dependencies</h2>
+
+<h3 id="crails-plugins">Crails plugins</h3>
+
+<p>You will likely also want to use some of the optional plugins from the crails framework. Here’s a little
+bash script that defines which crails plugins you may wish to use:</p>
+
+<pre><code>crails_packages=(
+  libcrails-templates
+  libcrails-action
+  libcrails-controllers
+  libcrails-crud
+  libcrails-cookies
+  libcrails-form-parser
+  libcrails-multipart-parser
+  libcrails-url-parser
+  libcrails-xml-parser
+  libcrails-json-parser
+  libcrails-json-views
+  libcrails-html-views
+  libcrails-databases
+  libcrails-http-client
+  libcrails-xmlrpc
+  libcrails-proxy
+  libcrails-tests
+)
+</code></pre>
+
+<p>Then we just use this <code>$crails_packages</code> variable to fetch, build and install all our selected plugins:</p>
+
+<pre><code>for package in ${crails_packages[@]} ; do
+  bpkg add "https://github.com/crails-framework/$package.git#2.0.0"
+done
+
+bpkg fetch
+
+for package in ${crails_packages[@]} ; do
+  bpkg build $package
+done
+
+bpkg install --all --recursive
+</code></pre>
+
+<h3 id="sql-database-support">SQL database support</h3>
+
+<p>SQL support in Crails is based on the ODB compiler and library. From the same directory as earlier,
+you can build them with the following commands, which you should now be familiar with:</p>
+
+<pre><code>bpkg build odb
+bpkg build libodb libodb-pgsql
+</code></pre>
+
+<p>ODB also comes with support for sqlite, mysql and oracle databases. Customize the previous command
+to your own needs: here’s what it would look like if you wanted to include all the backends:</p>
+
+<pre><code>bpkg build libodb libodb-sqlite libodb-mysql libodb-oracle libodb-pgsql
+</code></pre>
+
+<p><em>We don’t recommend including everything though, as your application build will expect you to link
+with all the backends libraries. Only build the backends you need in your current environment.</em></p>
+
+<p>Now that ODB is available, we’ll build the libcrails-odb module:</p>
+
+<pre><code>bpkg add "https://github.com/crails-framework/libcrails-odb.git#2.0.0"
+bpkg fetch
+bpkg build libcrails-odb
+</code></pre>
+
+<p>You may now re-install the build2 package with our newly built libraries:</p>
+
+<pre><code>bpkg install --all --recursive
+</code></pre>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>
