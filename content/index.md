@@ -58,8 +58,8 @@ Crails integrates **Comet.cpp**, which uses [Cheerp](https://www.leaningtech.com
 
 **1**. Install Crails using one of the following guides:
 
-* [Ubuntu](/getting-started/ubuntu.html)
-* [ArchLinux](/getting-started/archlinux.html)
+* [Linux](/getting-started/linux.html)
+* Windows (not yet available)
 
 **2**. At the command prompt, create a new Crails application:
 
