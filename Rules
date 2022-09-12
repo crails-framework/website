@@ -4,29 +4,34 @@ ignore "/css/_*.scss"
 
 compile "/css/*.scss" do
   filter :sass, syntax: :scss
+  filter :relativize_paths, type: :css
   write @item.identifier.without_ext + ".css"
 end
 
 compile "/**/*.md" do
   filter :kramdown
   layout "/default.*"
+  filter :relativize_paths, type: :html5
   write @item.identifier.without_ext + ".html"
 end
 
 compile '/index.html' do
   layout '/default.*'
+  filter :relativize_paths, type: :html5
   write '/index.html'
 end
 
 compile '/**/*.html' do
   layout '/default.*'
   filter :erb
+  filter :relativize_paths, type: :html5
   write item.identifier.without_ext + '/index.html'
 end
 
 compile '/**/*.html.erb' do
   layout '/default.*'
   filter :erb
+  filter :relativize_paths, type: :html5
   write item.identifier.without_ext.gsub(/\.html$/, '') + '/index.html'
 end
 
