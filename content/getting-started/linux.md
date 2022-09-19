@@ -16,7 +16,13 @@ should work on any Unix-like system (Linux, FreeBSD, Mac).
 Make sure you have a C++ compiler (g++ or clang++) installed on your system before running the install
 script. The installer will let you pick your preferred compiler before installing crails.
 
-## Preparing a build environment
+## Custom build
+
+Alternatively, you can also build crails on your own. It will give you more options for building,
+and will make you familiar with how crails is built for deployment. If you want to try this
+method, the following chapters of this tutorials are meant to guide you through the steps:
+
+## Preparing a build2 package
 
 Crails uses the build2 build system, which will take care of managing dependencies and packaging
 the Crails for your development or production environments.
