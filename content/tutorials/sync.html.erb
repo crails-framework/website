@@ -1,0 +1,294 @@
+---
+title: Frontend/backend real-time synchronization
+---
+
+<div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<h3>1.1 Guide Assumptions</h2>
+<p>
+In order to follow this guide, you should:
+</p>
+<ul>
+<li>Be familiar with <a href="/tutorials/channels">channels</a>.</li>
+<li>Be familiar with the ODB plugin for crails<br/>(the <a href="/getting-started">getting started</a> tutorial should be enough)</li>
+</ul>
+
+<h3>1.2 Setup</h3>
+
+<p>
+  In this tutorial, we will build a minimalist message board that will update itself. Users will be able to
+  add messages to the board, and other users will see those appear are they are created.
+</p>
+
+<p>
+  To achieve this behaviour, we will use the <code>sync</code> plugin, which you can add to your application with the following
+  command:
+</p>
+
+<pre>$ crails plugins sync install</pre>
+
+<h2>2. ODB Transactions</h2>
+
+<p>
+  The sync plugin provides features to broadcast database transactions to your clients. This chapter will
+  focus on SQL transactions, using both the odb and sync plugins.
+</p>
+
+<h3>2.1 Server</h3>
+
+<p>
+  Let's start by generating a resource:
+</p>
+
+<pre>$ crails scaffold resource -n message -p std::string/message std::string/author</pre>
+
+<h4>2.1.1 Controller</h4>
+<p>
+  Controllers that interact with an SQL database inherit from the <code>Crails::Odb::Controller</code> class
+  template. To synchronize transactions with the client, we will use the second parameter of that template
+  to overload the default wrapper making for SQL queries with the <code>Crails::Odb::Sync::Connection</code>
+  class:
+</p>
+
+<pre class="filepath">app/controllers/message.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include "application.hpp"
+#include "app/models/message.hpp"
+
+// Define our controller with synchronization enabled:
+typedef Crails::Odb::Controller<
+    ApplicationController,
+    Crails::Odb::Sync::Connection
+  > MessageSuperController;
+
+class MessageController : public MessageSuperController
+{
+public:
+  MessageController(Crails::Context&);
+
+  void initialize() override;
+  void finalize() override;
+
+  void index();
+  void show();
+  void create();
+  void update();
+  void destroy();
+private:
+  std::shared_ptr<Message> find_model(Crails::Odb::id_type id);
+  void require_model(Crails::Odb::id_type id);
+  void find_list();
+
+  std::shared_ptr<Message> model;
+  std::vector<Message> model_list;
+};
+CPP
+%>
+
+<p>
+  Synchronization are broadcasted through channels. You may perform all synchronizations using a single channel,
+  or even use a channel for each of your model. In this example, we'll set up a channel for our controller:
+</p>
+
+<pre class="filepath">app/controllers/message.cpp</pre>
+<%= code_block <<CPP
+#include "message.hpp"
+#include <crails/odb/to_vector.hpp>
+#include "lib/odb/application-odb.hxx"
+
+using namespace std;
+
+MessageController::MessageController(Crails::Context& context) : MessageSuperController(context)
+{
+  database.sync_transaction.set_channel(
+    Crails::Sync::Channels::singleton::get()->require_unlocked_channel("/message/sync")
+  );
+}
+
+...
+CPP
+%>
+
+<h4>2.1.2 Router</h4>
+
+<p>
+  Now we just need to make the channel available via the router, so that clients can listen to it using
+  WebSockets:
+</p>
+
+<pre class="filepath">app/routes.cpp</pre>
+<%= code_block <<CPP
+#include "app/controllers/message.hpp"
+#include <crails/router.hpp>
+#include <crails/sync/channel_actions.hpp>
+
+void Crails::Router::initialize()
+{
+  // Append routes here (do not remove this line)
+  resource_actions(message, MessageController);
+  match_sync_channel("/message/sync", Crails::Sync::ChannelListener);
+}
+CPP
+%>
+
+<div class="hint-box">
+  <code>ChannelListener</code> is similar to <code>ChannelClient</code>, but it does not have the ability
+  to broadcast messages: it is read-only.
+</div>
+
+<h3>2.2 Client</h3>
+
+<p>
+  We'll now have the message index automatically update when a message is added or
+  updated.
+</p>
+
+<p>
+  Let's start by updating the index view template. We need to make some changes so
+  that rows can be added and updated from a script:
+</p>
+
+<pre class="filepath">app/views/message/index.html</pre>
+<%= html_block <<CPP
+#include "app/models/message.hpp"
+#include <boost/lexical_cast.hpp>
+
+using namespace std;
+
+vector<Message> @models;
+string route = "message";
+// END LINKING
+
+<%= tag("a", {{"href", '/' + route + "/new"}}) yields %%>
+  New
+<% end %%>
+
+<table class="table">
+  <thead>
+    <th>Author</th>
+    <th>Content</th>
+  </thead>
+  <tbody>
+<% for (const Message& model : models) do %%>
+    <!-- the [data-id] attribute will help
+         our script find which rows to update -->
+    <tr data-id="<%= model.get_id() %%>">
+      <td><%= model.get_author() %%></td>
+      <td><%= model.get_content() %%></td>
+    </tr>
+<% end %%>
+  </tbody>
+</table>
+CPP
+%>
+
+<p>
+  Now that the view is ready, let's write a script that will listen to our
+  message channel and update the table when it receives notification of new
+  transactions:
+</p>
+
+<pre class="filepath">app/assets/messages.js</pre>
+<%= code_block <<CPP
+const socket = new WebSocket("ws://0.0.0.0:3001/message/sync");
+
+function updateRow(row, properties) {
+  row.children[0].textContent = properties.author;
+  row.children[1].textContent = properties.content;
+}
+
+function createRow(list, properties) {
+  const row = document.createElement("tr");
+
+  row.insertCell(document.createElement("td"));
+  row.insertCell(document.createElement("td"));
+  updateRow(row, properties;)
+  list.insertRow(row);
+}
+
+function forEachModel(list, callback) {
+  for (let id in list.message)
+    callback(id, list.message[id]);
+}
+
+socket.onmessage = function (event) {
+  const transaction = JSON.parse(event.data);
+  const list = document.querySelector("tbody");
+
+  forEachModel(transaction.updates, function(id, properties) {
+    const row = list.querySelector(`[data-id="${id}"]`);
+    row ? updateRow(row, properties) : createRow(list, properties);
+  });
+
+  forEachModel(transaction.removals, function(id, properties) {
+    const row = list.querySelector(`[data-id="${id}"]`);
+    if (row)
+      list.removeChild(row);
+  });
+}
+CPP
+%>
+
+<p>
+  Now this might need some explaining. As you can see in the <code>onmessage</code> callback, the
+  transaction data is transmitted as JSON. Once the message received by the WebSocket is parsed,
+  the object received will contain two properties: <code>updates</code> and <code>removals</code>.
+  Added and edited models will appear in the former, while deleted models will appear in the former.
+</p>
+
+<p>
+  Within both <code>updates</code> and <code>removals</code>, models are then sorted by scope. In
+  this example, the <code>Message::scope</code> constant is used, which defaults to <i>message</i>.
+  This is why the <code>forEachModel</code> function loops over <code>list.message</code>.
+</p>
+
+<p>
+  Each scope itself is a map of all updated or deleted models, where the model id is used as key.
+</p>
+
+<p>
+  The <code>updates</code> object also provides all the model's attribute, which is how we update
+  or create the cells in the <code>createRow</code> and <code>updateRow</code> functions.
+</p>
+
+<div class="hint-box">
+  The model properties are rendered to JSON by using the <code>to_json</code> method of your model
+  (if you did not use a scaffold to create your model, don't forget to add that method). Alternatively,
+  if there is a json template matching your model's view constant (<code>Message::view</code> in this
+  exmaple), it will use this view instead.
+</div>
+
+<p>
+  Our script is not yet included into our index view. Let's fix that:
+</p>
+
+<pre class="filepath">app/views/message/index.html</pre>
+<%= html_block <<CPP
+#include "lib/assets.hpp" // add the assets include
+#include "app/models/message.hpp"
+#include <boost/lexical_cast.hpp>
+
+using namespace std;
+
+vector<Message> @models;
+string route = "message";
+// END LINKING
+
+...
+
+<table class="table">
+...
+</table>
+
+<%= tag("script", {{"src", Assets::application_js}}) yields %%>
+<% yields-end %%>
+CPP
+%>
+
+<p>
+  And voilà, we're done. Build your server and go to <a href="http://localhost:3001/message">http://localhost:3001/message</a>
+  to see the result of your work.
+</p>
