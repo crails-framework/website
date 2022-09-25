@@ -292,3 +292,279 @@ CPP
   And voilà, we're done. Build your server and go to <a href="http://localhost:3001/message">http://localhost:3001/message</a>
   to see the result of your work.
 </p>
+
+<h2 id="task-progression">3. Task progression</h3>
+
+<p>
+  The <i>sync</i> plugin also provides tools to follow the progress of a task remotely.
+</p>
+
+<p>
+  Create an application with the following command:
+</p>
+
+<pre>$ crails new -n synctask -p html
+$ cd synctask</pre>
+
+<p>
+  Add the sync plugin:
+</p>
+
+<pre>$ crails plugins sync install</pre>
+
+<h3>3.1 Controller</h3>
+<p>
+  We'll now add a simple controller which will perform an asynchronous task when called upon:
+</p>
+
+<pre class="filepath">app/controller/task.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include "application.hpp"
+#include <iostream>
+
+class TaskController : public ApplicationController
+{
+public:
+  TaskController(Crails::Context& context) :
+    ApplicationController(context)
+  {
+  }
+
+  void index()
+  {
+    std::thread(std::bind(run_async_task)).detach();
+  }
+
+private:
+  static void run_async_task()
+  {
+    for (int i = 60 ; i > 0 ; --i)
+    {
+      std::cout << "Incrementing task: " << i << std::endl;
+      sleep(1);
+    }
+  }
+};
+CPP
+%>
+
+<p>
+  In the <code>index</code> action, we create an asynchronous task using <code>std::thread</code>.
+  We will now use the <code>Crails::Sync::Task</code> class, which will help us broadcast the progress
+  of the task over WebSockets.
+</p>
+
+<p>
+  Let's update the <code>index</code> action:
+  </p>
+
+<%= code_block <<CPP
+  void index()
+  {
+    int step_count = 60;
+    auto task = std::make_shared<Crails::Sync::Task>("task", step_count);
+
+    std::thread(std::bind(run_async_task, task, step_count)).detach();
+  }
+CPP
+%>
+
+<p>
+  We instantiate the <code>Task</code> object with two parameters:<br/>
+  - The scope "task", which is used to define the base path on which the progress will be broadcasted.<br/>
+  - The step count, which should match the amount of time you expect to increment the task progress.
+</p>
+
+<p>
+  Now, let's include the task object in the <code>run_async_task</code> method:
+</p>
+
+<%= code_block <<CPP
+  static void run_async_task(std::shared_ptr<Crails::Sync::Task> task, int step_count)
+  {
+    for (int i = step_count ; i > 0 ; --i)
+    {
+      std::cout << "Incrementing task: " << i << std::endl;
+      sleep(1);
+      task->increment();
+    }
+  }
+CPP
+%>
+
+<p>
+  A simple call to <code>task->increment()</code> is all it takes on the server part.
+</p>
+
+<h3>3.2 Router</h3>
+
+<p>
+  We now have to add routes for both our controller action, and the channel our task progress
+  will be broadcasted to:
+</p>
+
+<pre class="filepath">app/routes.cpp</pre>
+<%= code_block <<CPP
+#include <crails/router.hpp>
+#include <crails/sync/channel_actions.hpp> // don't forget this include
+#include "controllers/task.hpp"
+
+void Crails::Router::initialize()
+{
+  match_action("GET", "/task", TaskController, index);
+  match_sync_task("/tasks/:task_id");
+}
+CPP
+%>
+
+<p>
+  The <code>match_sync_task</code> is a macro that creates the required route for task progress
+  broadcasting. It's composed of the task's scope and its id as a parameter.
+</p>
+
+<h3>3.3 View</h3>
+<p>
+  Now we'll create a view to display our task progress. Let's start by adding a Bootstrap layout:
+</p>
+
+<pre>
+$ crails scaffold layout --toolkit bootstrap
+</pre>
+
+<p>
+  Then create the following view:
+</p>
+
+<pre class="filepath">app/views/task/show.html</pre>
+<%= html_block <<HTML
+std::string @task_uri;
+std::string @task_id;
+// END LINKING
+<h1>Task Watcher</h1>
+<h3>Watching task <%= task_id %%></h3>
+
+<div class="progress">
+  <div id="progress-bar" class="progress-bar" role="progressbar">
+    0/0
+  </div>
+</div>
+
+<script>
+  const socket = new WebSocket("ws://0.0.0.0:3001/<%= task_uri %%>");
+  socket.onmessage = event => {
+    const metadata = JSON.parse(event.data);
+    const percents = metadata.progress * 100;
+    const progressBar = document.querySelector("#progress-bar");
+
+    progressBar.textContent = `${metadata.item_progress}/${metadata.item_count}`;
+    progressBar.style.width = `${Math.ceil(percents)}%`;
+  };
+</script>
+HTML
+%>
+
+<p>
+  We use a bootstrap progressbar to display the task progress, and a WebSocket to
+  receive the udpates. The update messages are in JSON, and feature a progress
+  value that goes from 0 to 1, as well as counters for the amount of tasks done,
+  and the total amount of task to complete.
+</p>
+
+<p>
+  We will now update the <code>index</code> action in our controller to provide
+  the <code>task_uri</code> and <code>task_uid</code> shared variable that our
+  view is expecting:
+</p>
+
+<pre class="filepath">app/controllers/task.hpp</pre>
+<%= code_block <<CPP
+  void index()
+  {
+    int step_count = 60;
+    auto task = std::make_shared<Crails::Sync::Task>("task", step_count);
+
+    std::thread(std::bind(run_async_task, task, step_count)).detach();
+    vars["layout"] = std::string("layouts/application");
+    vars["task_uri"] = task->uri();
+    vars["task_id"] = task->get_id();
+    render("task/show");
+  }
+CPP
+%>
+
+<p>
+  Don't forget to also set the view layout to <code>layouts/application</code>.
+</p>
+
+<p>
+  Build and launch your server, and then go to <a href="http://localhost:3001/task">http://localhost:3001/task</a>:
+  you should see the task slowly update every 3 seconds or so.
+</p>
+
+<h3>3.4 Customization</h3>
+
+<h4>3.4.1 Update broadcasting rate</h4>
+<p>
+  The updates happen slowly due to the notification policy of the <code>Task</code> object.
+  To avoid firing too many notifications, the <code>Task</code> object only notify clients
+  of progresses by blocks of 5 percents by default.
+</p>
+
+<p>
+  Let's change our <code>index</code> action to use a different update rate:
+</p>
+
+<%= code_block <<CPP
+  void index()
+  {
+    int step_count = 60;
+    auto task = std::make_shared<Crails::Sync::Task>("task", step_count);
+
+    task->set_notification_step(1);
+    ...
+  }
+CPP
+%>
+
+<p>
+  By calling <code>set_notification_step</code>, we tell our notifier to broadcast update
+  everytime the progress moves by 1 percent.
+</p>
+
+<h4>3.4.2 Custom notification messages</h4>
+<p>
+  You may also manually broadcast an update whenever you want by calling the <code>notify</code>
+  method:
+</p>
+
+<%= code_block <<CPP
+  static void run_async_task(std::shared_ptr<Crails::Sync::Task> task, int task_count)
+  {
+    ...
+    task->notify();
+    ...
+  }
+CPP
+%>
+
+<p>
+  You may also add your own message to the broadcasted update:
+</p>
+
+<%= code_block <<CPP
+  task->notify("Hello world !");
+CPP
+%>
+
+<p>
+  The client WebSocket will be able to access this message in the JSON data broadcasted, such as:
+</p>
+
+<%= code_block <<CPP
+  socket.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+    console.log("Received task update with message:", data.message);
+  };
+CPP
+%>

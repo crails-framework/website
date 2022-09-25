@@ -28,7 +28,7 @@ title: Getting Started with Crails Framework
   You may do so by following the guide corresponding to your operating system:
 </p>
 <ul>
-  <li><a href="/getting-started/linux.html" target="_blank">Linux</a></li>
+  <li><a href="/getting-started/linux.html" target="_blank">Linux, FreeBSD, MacOS</a></li>
 </ul>
 
 <h3>2.2 Creating the Blog application</h3>
@@ -933,7 +933,7 @@ CPP
 #include <boost/lexical_cast.hpp>
 
 Article& @model;
-std::string article_uri = "/article" + boost::lexical_cast<std::string>(model.get_id());
+std::string article_uri = Crails::uri("article", model.get_id());
 // END LINKING
 <h1><%= model.get_title() %%></h1>
 
@@ -944,14 +944,22 @@ std::string article_uri = "/article" + boost::lexical_cast<std::string>(model.ge
     <%= link(article_uri + "/edit", "Edit") %%>
   </li>
   <li>
-    <%= link(article_uri, "Delete", {{"method","delete"}, {"confirm", "Are you sure ?"}}) %%>
+    <%= link(article_uri, "Delete", {
+      {"method","delete"}, {"confirm", "Are you sure ?"}
+    }) %%>
   </li>
 </ul>
 CPP
 %>
 
 <p>
-  In the above code, we use the html template <code>link</code> helper to generate our links.
+  In the above code, we use the <code>Crails::uri()</code> helper to generate an URI from
+  parameters: it serializes each parameter as a string and separate them with slashes. In
+  this case, it will result in the following string: <code>/article/1</code> (depending on the article id).
+</p>
+
+<p>
+  Right below, we use the html template <code>link</code> helper to generate our links.
   This helper provides some options allowing us to use the <i>DELETE</i> method in our delete
   link, but also to add a confirm dialog. Note that these options won't work in an environment
   where JavaScript has been disabled.
@@ -1112,8 +1120,10 @@ CPP
 
 Article& @model;
 Comment new_comment;
-Crails::FormBuilder<Comment> form = Crails::FormBuilder<Comment>(this, new_comment);
-std::string new_comment_path = "/article" + boost::lexical_cast<std::string>(model.get_id()) + "/comments";
+Crails::FormBuilder<Comment> form =
+  Crails::FormBuilder<Comment>(this, new_comment);
+std::string new_comment_path =
+  Crails::uri("article", model.get_id(), "comments");
 // END LINKING
 <h1><%= model.get_title() %%></h1>
 
@@ -1148,8 +1158,9 @@ void CommentController::create()
 {
   std::shared_ptr<Article> article;
   Comment model;
+  auto query = odb::query<Article>::id == params["article_id"];
 
-  if (database.find_one(article, odb::query<Article>::id == params["article_id"]))
+  if (database.find_one(article, query))
   {
     model.set_article(article);
     model.edit(params[Comment::resource_name]);
@@ -1199,8 +1210,9 @@ CPP
 void ArticleController::show()
 {
   odb::result<Comment> comments;
+  auto query = odb::query<Comment>::article->id == model->get_id();
 
-  database.find<Comment>(comments, odb::query<Comment>::article->id == model->get_id());
+  database.find<Comment>(comments, query);
   render("article/show", {
     {"comments", &comments}
   });
@@ -1223,10 +1235,12 @@ CPP
 #include "app/models/comment.hpp"
 
 Article& @model;
-odb::result<Comment>& @comments; // bound odb::result object
+odb::result<Comment>& @comments; // shared odb::result object
 Comment new_comment;
-Crails::FormBuilder<Comment> form = Crails::FormBuilder<Comment>(this, new_comment);
-std::string new_comment_path = "/article" + boost::lexical_cast<std::string>(model.get_id()) + "/comments";
+Crails::FormBuilder<Comment> form =
+  Crails::FormBuilder<Comment>(this, new_comment);
+std::string new_comment_path =
+  Crails::uri("article", model.get_id(), "comments");
 // END LINKING
 <h1><%= model.get_title() %%></h1>
 
@@ -1263,8 +1277,72 @@ HTML
   Now you can add articles and comments to your blog and have them show up in the right places.
 </p>
 
+<h2>7. Security</h2>
 
-<h2>10. What's next ?</h2>
+<h3>7.1 Basic Authentication</h3>
+
+<p>
+  If you were to publish your blog online, anyone would be able to add, edit and delete articles or delete comments.
+</p>
+
+<p>
+  Crails provides an HTTP authentication system that will work nicely in this situation.
+</p>
+
+<p>
+  In the <code>ArticlesController</code> we need to have a way to block access to the various actions if the person is
+  not authenticated. Here we can use the Crails <code>require_basic_authentication</code> method, which allows access
+  to the requested action if that method allows it.
+</p>
+
+<p>
+  To use the authentication system, we specify it in the <code>initialize</code> method of our <code>ArticleController</code>.
+  In our case, we want the user to be authenticated on every action except <code>index</code> and <code>show</code>, so we write
+  that:
+</p>
+
+<pre class="filepath">app/controllers/article.hpp</pre>
+<%= code_block <<CPP
+void ArticleController::initialize()
+{
+  Crails::Odb::Controller<ApplicationController>::initialize();
+  string action_name = get_action_name();
+
+  if (action_name != "index" && action_name != "show")
+    require_basic_authentication("username", "password");
+
+  if (action_name == "show" || action_name == "edit" || action_name == "update" || action_name == "destroy")
+    require_model(params["id"]);
+}
+CPP
+%>
+
+<p>
+  Now if you try to create a new article, you will be greeted with a basic HTTP Authentication challenge:
+</p>
+
+<p>
+  TODO: image
+</p>
+
+<p>
+  After entering the correct username and password, you will remain authenticated until a different username and password
+  is required or the browser is closed.
+</p>
+
+<p>
+  In more advanced use cases, you will want users to be able to register into your application:
+  to learn how Crails can help you with this behavior, move on to the <a href="/tutorials/signin">Sign-In</a> tutorial.
+</p>
+
+<h3>7.2 Other security considerations</h3>
+
+<p>
+  Security, especially in web applications, is a broad and detailed area. Security in your Crails application is covered
+  in more depth in the <a href="/tutorials/security">Crails Security Guide</a>.
+</p>
+
+<h2>8. What's next ?</h2>
 
 <p>Now that you've seen your first Crails application, you should feel free to update it and experiment on your own.</p>
 

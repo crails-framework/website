@@ -1,7 +1,7 @@
 ---
-title: Installing on Linux
+title: Installing on Linux, FreeBSD and MacOS
 ---
-# Installing on Linux
+# Installing on Linux, FreeBSD and MacOS
 
 ## Using the install script
 
@@ -15,6 +15,35 @@ should work on any Unix-like system (Linux, FreeBSD, Mac).
 
 Make sure you have a C++ compiler (g++ or clang++) installed on your system before running the install
 script. The installer will let you pick your preferred compiler before installing crails.
+
+### Database backends
+
+The installer will prompt you to pick database backends.
+
+If you pick any SQL backends, you will be asked whether you also want to install the ODB compiler. The
+ODB compiler is essential to building SQL-backed applications. However, the ODB compiler can only be
+compiled with g++, so make sure you have gcc and the `gcc-plugins` development package installed.
+
+### Comet.cpp
+
+The installer will then ask you whether you want to build Comet or not. Comet is a MVC frontend library
+that uses a _C++ to JavaScript transpiler_, which can be very useful to share code betweem backend and
+frontend.
+
+You will need to have [Cheerp](https://docs.leaningtech.com/cheerp/) installed beforehand, if you
+want to build Comet.
+
+### Using system libraries
+
+Lastly, the installer will ask you if you want to use system libraries when available.
+
+Using this option will reduce the compilation time and the size of the packaged web application.
+However, you are expected to ensure that the required boost libraries are installed on both
+your system and your production environments.
+
+Not using this option (or leaving the default) will locally build all dependencies for crails.
+When packaging the application, all dependencies will be included, meaning you won't need
+to use your production's machine package managers.
 
 ## Custom build
 
