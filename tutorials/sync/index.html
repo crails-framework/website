@@ -370,7 +370,7 @@ private:
     int step_count = 60;
     auto task = std::make_shared&lt;Crails::Sync::Task&gt;("task", step_count);
 
-    std::thread(std::bind(run_async_task, task, step_count));
+    std::thread(std::bind(run_async_task, task, step_count)).detach();
   }
 </code></pre>
 
@@ -480,7 +480,7 @@ std::string @task_id;
     int step_count = 60;
     auto task = std::make_shared&lt;Crails::Sync::Task&gt;("task", step_count);
 
-    std::thread(std::bind(run_async_task, task, step_count));
+    std::thread(std::bind(run_async_task, task, step_count)).detach();
     vars["layout"] = std::string("layouts/application");
     vars["task_uri"] = task-&gt;uri();
     vars["task_id"] = task-&gt;get_id();
