@@ -1,0 +1,277 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Authentication: OAuth</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  This tutorial is the continuation of the <a href="../signin">accounts and session</a> tutorial.
+</p>
+
+<h3>1.1 Installing the oauth plugin</h3>
+
+<p>
+  First, we'll install the OAuth plugin:
+</p>
+
+<pre>$ crails plugins extra -a libcrails-oauth libcrails-http-client
+</pre>
+
+<p>
+  The OAuth plugin will need to make HTTP queries to the OAuth services that you'll use,
+  so we also need to require <code>libcrails-http-client</code> along with <code>libcrails-oauth</code>.
+</p>
+
+<h2>2. Google Sign-in</h2>
+
+<p>
+  We will start by implementing OAuth with Google as a provider. We'll do it in three steps: creating a
+  controller, adding routes to the router, and add a button on the sign-in view.
+</p>
+
+<p>
+  However, before we start working on the code, you should create the credentials for your application.
+  Head to Google's <a href="https://console.cloud.google.com" target="_blank">developer console</a>, and create an
+  <code>ID clients OAuth 2.0</code> using the credentials API.
+</p>
+
+<p>
+  You will be given a <code>Client ID</code> and a <code>Client Secret</code>. You should also add the
+  following redirection URL:<br><code>http://localhost:3001/session/oauth/google/callback</code>.
+</p>
+
+<h3>2.1 OAuth controller</h3>
+
+<p>
+  You're all set. Now let's implement OAuth in our application. Create the following header file:
+</p>
+
+<pre class="filepath">app/controllers/google_oauth.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include &lt;crails/oauth/controller.hpp&gt;
+#include &lt;crails/oauth/google.hpp&gt;
+#include "application.hpp"
+#include "app/models/user.hpp"
+
+typedef Crails::OAuth::Controller&lt;
+  User,                  // &lt;- Your authenticable model goes here
+  Crails::OAuth::Google, // &lt;- OAuth backend to use
+  ApplicationController  // &lt;- Controller to extend. Must implement Crails::Odb::Controller.
+&gt; OAuthGoogleControllerBase;
+
+class OAuthGoogleController : public OAuthGoogleControllerBase
+{
+public:
+  OAuthGoogleController(Crails::Context&amp; context) : OAuthGoogleControllerBase(context)
+  {}
+
+  // The following methods are pure virtuals from Crails::OAuth::Controller:
+  Crails::OAuth::Settings settings() const override;
+  std::shared_ptr&lt;User&gt;   find_user(const std::string&amp; email) override;
+  std::shared_ptr&lt;User&gt;   create_user(Crails::OAuth::Google&amp; api) override;
+  void                    update_user(Crails::OAuth::Google&amp;, User&amp;) override;
+};
+</code></pre>
+
+<p>
+  Now let's implement these pure virtuals methods and see what purpose they serve:
+</p>
+
+<pre class="filepath">app/controllers/google_oauth.cpp</pre>
+<pre><code class="language-cpp">#include "google_oauth.hpp"
+#include "lib/odb/application-odb.hxx"
+
+/*
+ * The `settings` method allows you to specify the specific settings
+ * for your provider: id, secret, and the url which the provider shall
+ * redirect to after authentication:
+ */
+Crails::OAuth::Settings OAuthGoogleController::settings() const override
+{
+  return Crails::OAuth::Settings()
+    .with_id("123456789012-abcdefghijklmnopqrstuvwxyz012345.apps.googleusercontent.com")
+    .with_secret("GOCSPX-abcdefghijklmnopqrstuvwxyz01")
+    // Take note of the redirect_url: we'll use it later in the router
+    .with_redirect_url("http://localhost:3001/session/oauth/google/callback");
+}
+
+/*
+ * The `find_user` method must attempt to find a matching user based on
+ * the user's email. It will be used to know which user should get
+ * connected, or if a new user should be created.
+ */
+std::shared_ptr&lt;User&gt; OAuthGoogleController::find_user(const std::string&amp; email) override
+{
+  std::shared_ptr&lt;User&gt; user;
+
+  database.find_one(user, odb::query&lt;User&gt;::name == email);
+  return user;
+}
+
+/*
+ * The `create_user` method must create a new user, based on the data
+ * provided by the OAuth API object. The API object provide different
+ * methods depending on the provider, but you'll always have at least
+ * access to the `get_user_email` method.
+ */
+std::shared_ptr&lt;User&gt; OAuthGoogleController::create_user(Crails::OAuth::Google&amp; api)
+{
+  auto user = std::make_shared&lt;User&gt;();
+
+  user-&gt;set_name(api.get_user_email());
+  return user;
+}
+
+/*
+ * The `update_user` is called when an existing user connects through
+ * OAuth. It gives you the opportunity to update the user's data based
+ * on the data received from the OAuth provider.
+ */
+void OAuthGoogleController::update_user(Crails::OAuth::Google&amp; api, User&amp; user)
+{
+  // Example:
+  // user-&gt;set_avatar(api.get_avatar());
+}
+</code></pre>
+
+<h3>2.2 OAuth routes</h3>
+
+<p>
+  Our controller is ready. We will now add the routes to access it. The <code>libcrails-oauth</code>
+  plugin provides the <code>oauth_actions</code> helper, which we will leverage here:
+</p>
+
+<pre><code class="language-cpp">#include "app/controllers/user.hpp"
+#include "app/controllers/session.hpp"
+#include "app/controllers/google_oauth.hpp" // &lt;- Add our new header
+#include &lt;crails/router.hpp&gt;
+
+void Crails::Router::initialize()
+{
+  oauth_actions("/session/oauth/google", OAuthGoogleController);
+  resource_actions(user, UserController);
+  signin_actions("/session", ::SessionController);
+  match_action("GET", "/session/new", ::SessionController, new_);
+}
+</code></pre>
+
+<p>
+  This will create two routes:
+</p>
+
+<ul>
+  <li><code>/session/oauth/google</code> which will redirect to Google's authentication interface</li>
+  <li><code>/session/oauth/google/callback</code> which is our redirect url, as seen in the controller's <code>settings</code> method</li>
+</ul>
+
+<h3>2.3 Sign in button</h3>
+
+<p>
+  We're done with the backend. Last thing left to do: create a button in the sign-in view
+  that will allow users to connect with their Google account. Open the new session view
+  and add the following button below the <i>Register</i> link:
+</p>
+
+<pre class="filepath">app/views/session/new.html</pre>
+<pre><code class="language-html">&lt;p&gt;Not a member? &lt;a href="/user/new"&gt;Register&lt;/a&gt;&lt;/p&gt;
+
+&lt;!-- from: https://stackoverflow.com/a/59119994/626921 --&gt;
+&lt;%= tag("a", {
+  {"href","/session/oauth/google"},
+  {"class","btn btn-outline-dark"},
+  {"style","text-transform:none"}}) yields %&gt;
+  &lt;img width="20px" style="margin-bottom:3px; margin-right:5px" src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" /&gt;
+  Login with Google
+&lt;% yields-end %&gt;
+</code></pre>
+
+<p>
+  And that's it ! Build your application, launch the server, and you'll be able to create new users with your
+  Google account !
+</p>
+
+<h3>2.4 Google OAuth user data</h3>
+
+<p>
+  Before moving on to other matters, let's take a look at the user data you can
+  access through Google's OAuth API object, aka <code>Crails::OAuth::Google</code>:
+</p>
+
+<table>
+  <tbody><tr><th>Field</th><th>Method</th></tr>
+  <tr><td>Email</td><td>get_user_email()</td></tr>
+  <tr><td>Avatar</td><td>get_user_avatar()</td></tr>
+  <tr><td>Given name</td><td>get_user_firstname()</td></tr>
+  <tr><td>Family name</td><td>get_user_lastname()</td></tr>
+  <tr><td>Name</td><td>get_user_name()</td></tr>
+  <tr><td>Locale</td><td>get_user_locale()</td></tr>
+</tbody></table>
+
+<h2>3. Microsoft Live</h2>
+
+<h2>4. Facebook Sign-in</h2>
+
+<h2>5. Additional featuers</h2>
+
+<h3>5.1 Filtering user creation</h3>
+
+<p>
+  The default behaviour for <code>libcrails-oauth</code> is to create a user account
+  when the user signing in doesn't already have one.
+</p>
+
+<p>
+  You may wish to disable account creation through OAuth, or to implement your own
+  conditions to figure out whether a new account should or shouldn't be created. This
+  can be done by overloading the <code>is_acceptable_new_user</code> method. Let's
+  do it with our Google OAuth controller:
+</p>
+
+<pre class="filepath">app/controllers/google_oauth.hpp</pre>
+<pre><code class="language-cpp">...
+class OAuthGoogleController : public OAuthGoogleControllerBase
+{
+public:
+  ...
+  bool is_acceptable_new_user(Crails::OAuth::Google&amp;) const override { return false; }
+};
+</code></pre>
+
+<p>
+  With this simple overloading, we have disabled account creating from users connecting with
+  Google OAuth. Since we receive the <code>Crails::OAuth::Google</code> object as a parameter,
+  we can also refine this behaviour and authorize account creation only from specific users.
+</p>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>

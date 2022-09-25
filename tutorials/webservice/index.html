@@ -1,0 +1,93 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Using Crails for API-only Applications</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. What is an API-only Application ?</h2>
+
+<p>
+  Instead of using Crails to generate HTML that communicates with the server through forms and links,
+  some developers are treating their web application as just an API client delivered as HTML with
+  JavaScript that consumes a JSON API.
+</p>
+
+<p>
+  This guide covers building a Crails application that serves JSON resources to an API client,
+  including client-side frameworks.
+</p>
+
+<h2>2. The Basic Configuration</h2>
+
+<p>
+  If you're building a Rails application that will be an API server first and foremost,
+  you can start with a more limited subset of Rails and add in features as needed.
+</p>
+
+<h3>2.1 Creating a webservice application</h3>
+
+<p>
+  You can generate a new api Crails app:
+</p>
+
+<pre>$ crails new -n my_api --configuration webservice --formats json</pre>
+
+<p>
+  The <code>webservice</code> configuration creates an application with a more limited set of middleware
+  than the default configuration. Specifically, it will not include any middleware primarly useful for
+  browser applications, such as cookie support, or form and multipart parsers.
+</p>
+
+<p>
+  The <code>formats</code> option allows you to pick which formats your webservice will use to interact
+  with its clients: parsers and view generators for the given formats will be included in your application.
+  Available options are <code>html</code>, <code>json</code> and <code>xml</code>. You
+  can combine these options, such as: <code>--formats json,xml</code>.
+</p>
+
+<h3>2.2 Creating a barebone application</h3>
+
+<p>
+  Crails also come with a barebone option for application generation. This will take away any non essential
+  part of the crails framework from your new application, and leave it to you to add the components needed
+  by your application. You can create a new barebone Crails app as such:
+</p>
+
+<pre>$ crails new -n my_barebone --configuration barebone</pre>
+
+<p>
+  The generated application will only feature the <a href="../../request_pipeline">Request Pipeline</a>,
+  which can be useful if you don't even plan on relying on a Router: you are free to add your own
+  request parsers and handlers, or to manually add crails parseres and handlers as you see fit.
+</p>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>

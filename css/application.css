@@ -147,3 +147,6 @@ p {
 
 #main {
   display: inline-block; }
+
+.tutorial-list li {
+  margin-bottom: 5px; }

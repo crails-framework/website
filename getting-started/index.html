@@ -48,8 +48,7 @@
   You may do so by following the guide corresponding to your operating system:
 </p>
 <ul>
-  <li><a href="ubuntu.html" target="_blakn">Ubuntu</a></li>
-  <li><a href="archlinux.html" target="_blank">ArchLinux</a></li>
+  <li><a href="linux.html" target="_blank">Linux, FreeBSD, MacOS</a></li>
 </ul>
 
 <h3>2.2 Creating the Blog application</h3>
@@ -172,8 +171,8 @@ $ build/server</code></pre>
   This will generate two files: <code>app/controllers/welcome.hpp</code> and <code>app/controllers/welcome.cpp</code>. Let's take a look at those:
 </p>
 
-<pre><code class="language-cpp">// app/controllers/welcome.hpp
-#pragma once
+<pre class="filepath">app/controllers/welcome.hpp</pre>
+<pre><code class="language-cpp">#pragma once
 #include "app/controllers/application.hpp"
 
 class WelcomeController : public ApplicationController
@@ -188,8 +187,8 @@ public:
 #endif
 </code></pre>
 
-<pre><code class="language-cpp">// app/controllers/welcome.cpp
-#include "welcome.hpp"
+<pre class="filepath">app/controllers/welcome.cpp</pre>
+<pre><code class="language-cpp">#include "welcome.hpp"
 
 using namespace std;
 
@@ -213,8 +212,8 @@ void WelcomeController::finalize()
   This is a basic skeleton for a controller. We will now add an <code>action</code> to the controller by adding the <code>index</code> method:
 </p>
 
-<pre><code class="language-cpp">// app/controllers/welcome.hpp
-#pragma once
+<pre class="filepath">app/controllers/welcome.hpp</pre>
+<pre><code class="language-cpp">#pragma once
 #include "app/controllers/application.hpp"
 
 class WelcomeController : public ApplicationController
@@ -239,6 +238,7 @@ public:
   Then, you need to register a new route in <code>app/routes.cpp</code>:
 </p>
 
+<pre class="filepath">app/routes.cpp</pre>
 <pre><code class="language-cpp">#include &lt;crails/router.hpp&gt;;
 #include "controller/welcome.hpp"
 
@@ -283,12 +283,13 @@ $ build/server</code></pre>
   First, you need to enable html views in your application. To do that, you need to add the <code>html</code> renderer to your application, by running the following command:
 </p>
 
-<pre><code>$ crails formats --add html</code></pre>
+<pre><code>$ crails templates formats --add html</code></pre>
 
 <p>
   Now, we'll add a new folder at <code>app/views/welcome</code> to create an ecpp template named <code>app/views/welcome/index.html</code>
 </p>
 
+<pre class="filepath">app/views/welcome/index.html</pre>
 <pre><code class="language-html">&lt;html&gt;
   &lt;head&gt;
     &lt;title&gt;Hello world!&lt;/title&gt;
@@ -300,9 +301,10 @@ $ build/server</code></pre>
 </code></pre>
 
 <p style="text-align: left">
-  We also need to update our controller at <code>app/controllers/welcome.hpp</code>so that it responds using our view:
+  We also need to update our controller so that it responds using our view:
 </p>
 
+<pre class="filepath">app/controllers/welcome.hpp</pre>
 <pre><code class="language-cpp">#pragma once
 #include "app/controllers/application.hpp"
 
@@ -411,14 +413,14 @@ This will create the following files:
   The <code>app/routes.cpp</code> file will also be modified to connect our controller's actions:
 </p>
 
-<pre><code class="language-cpp">// app/routes.hpp
-#include "app/controllers/article.hpp"
+<pre class="filepath">app/routes.cpp</pre>
+<pre><code class="language-cpp">#include "app/controllers/article.hpp"
 #include "app/controllers/welcome.hpp"
 #include &lt;crails/router.hpp&gt;
 
 void Crails::Router::initialize()
 {
-  resource_actions("article", ArticleController);
+  resource_actions(article, ArticleController);
   match_action("GET", "/", WelcomeController, index);
 }
 </code></pre>
@@ -465,6 +467,7 @@ $ build/tasks/odb_migrate/task -c odb</pre>
   <code>index</code> methods:
 </p>
 
+<pre class="filepath">app/controllers/article.cpp</pre>
 <pre><code class="language-cpp">void ArticleController::find_list()
 {
   odb::result&lt;Article&gt; results;
@@ -496,6 +499,7 @@ void ArticleController::index()
   Open the <code>app/views/article/index.html</code> file, and replace its contents as following:
 </p>
 
+<pre class="filepath">app/views/welcome/index.html</pre>
 <pre><code class="language-html">#include "app/models/article.hpp"
 
 std::vector&lt;Article&gt;&amp; @models;
@@ -562,9 +566,10 @@ std::vector&lt;Article&gt;&amp; @models;
 
 <p>
   The resource generator we used earlier already generated the route and controller methods needed. Let's take
-  a look at the controller's code at <code>app/controllers/article.cpp</code>:
+  a look at the controller's code:
 </p>
 
+<pre class="filepath">app/controllers/article.cpp</pre>
 <pre><code class="language-cpp">std::shared_ptr&lt;Article&gt; ArticleController::find_model(Crails::Odb::id_type id)
 {
   database.find_one(model, odb::query&lt;Article&gt;::id == id);
@@ -618,6 +623,7 @@ void ArticleController::show()
   Let's take a look at the <code>initialize</code> method generated for our <code>ArticleController</code>:
 </p>
 
+<pre class="filepath">app/controllers/article.cpp</pre>
 <pre><code class="language-cpp">void ArticleController::initialize()
 {
   Crails::Odb::Controller&lt;ApplicationController&gt;::initialize();
@@ -651,6 +657,7 @@ void ArticleController::show()
   following contents:
 </p>
 
+<pre class="filepath">app/views/article/show.html</pre>
 <pre><code class="language-html">#include "app/models/article.hpp"
 Article&amp; @model;
 // END LINKING
@@ -664,9 +671,10 @@ Article&amp; @model;
 </p>
 
 <p>
-  To finish up, let's add a convenient way to get to an article's page. We'll link each article's title in <code>app/views/article/index.html</code> to its page:
+  To finish up, let's add a convenient way to get to an article's page. We'll link each article's title in the index view to its page:
 </p>
 
+<pre class="filepath">app/views/article/index.html</pre>
 <pre><code class="language-html">#include "app/models/article.hpp"
 
 std::vector&lt;Article&gt;&amp; @models;
@@ -691,9 +699,10 @@ std::vector&lt;Article&gt;&amp; @models;
 </p>
 
 <p>
-  In a Rails application, these steps are conventionally handled by a controller's <code>new_</code> and <code>create</code> actions. Let's check out the implementation of these actions in our generated controller at <code>app/controllers/articles.cpp</code>:
+  In a Rails application, these steps are conventionally handled by a controller's <code>new_</code> and <code>create</code> actions. Let's check out the implementation of these actions in our generated controller:
 </p>
 
+<pre class="filepath">app/controllers/articles.cpp</pre>
 <pre><code class="language-cpp">void ArticleController::new_()
 {
   render("article/new");
@@ -724,6 +733,7 @@ void ArticleController::create()
   Let's take a look at the <code>app/views/article/new.html</code> view that was generated with the <code>crails scaffold resource</code> command:
 </p>
 
+<pre class="filepath">app/views/article/new.html</pre>
 <pre><code class="language-html">#include "app/models/article.hpp"
 Article model;
 // END LINKING
@@ -749,6 +759,7 @@ Article model;
   Let's replace the contents of <code>app/views/article/form.html</code> with the following:
 </p>
 
+<pre class="filepath">app/views/article/form.html</pre>
 <pre><code class="language-html">#include "app/models/article.hpp"
 #include &lt;crails/html_form_builder.hpp&gt;
 
@@ -801,9 +812,10 @@ Crails::FormBuilder&lt;Article&gt; form = Crails::FormBuilder&lt;Article&gt;(thi
 <h4>5.2.3 Finishing up</h4>
 
 <p>
-  We can now create an article by visiting <a href="http://localhost:3000/article/new">http://localhost:3000/article/new</a>. To finish up, let's link to that page from the bottom of <code>app/views/article/index.html</code>:
+  We can now create an article by visiting <a href="http://localhost:3000/article/new">http://localhost:3000/article/new</a>. To finish up, let's link to that page from the bottom of the article index:
 </p>
 
+<pre class="filepath">app/views/article/index.html</pre>
 <pre><code class="language-html">#include "app/models/article.hpp"
 
 std::vector&lt;Article&gt;&amp; @models;
@@ -828,9 +840,10 @@ std::vector&lt;Article&gt;&amp; @models;
 </p>
 
 <p>
-  These steps are conventionally handled by a controller's <code>edit</code> and <code>update</code> actions. Let's take a look at the implementation of these actions that was generated by our <i>scaffold</i> at <code>app/controllers/article.hpp</code>, below the create action:
+  These steps are conventionally handled by a controller's <code>edit</code> and <code>update</code> actions. Let's take a look at the implementation of these actions that was generated by our <i>scaffold</i>, below the create action:
 </p>
 
+<pre class="filepath">app/controllers/article.cpp</pre>
 <pre><code class="language-cpp">void ArticleController::edit()
 {
   render("article/edit");
@@ -894,8 +907,12 @@ void ArticleController::update()
   an article from its own page:
 </p>
 
+<pre class="filepath">app/views/articles/show.html</pre>
 <pre><code class="language-cpp">#include "app/models/article.hpp"
+#include &lt;boost/lexical_cast.hpp&gt;
+
 Article&amp; @model;
+std::string article_uri = Crails::uri("article", model.get_id());
 // END LINKING
 &lt;h1&gt;&lt;%= model.get_title() %&gt;&lt;/h1&gt;
 
@@ -903,21 +920,27 @@ Article&amp; @model;
 
 &lt;ul&gt;
   &lt;li&gt;
-    &lt;a href="/article/&lt;%= model.get_id() %&gt;/edit"&gt;
-      &lt;button&gt;Edit&lt;/button&gt;
-    &lt;/a&gt;
+    &lt;%= link(article_uri + "/edit", "Edit") %&gt;
   &lt;/li&gt;
   &lt;li&gt;
-    &lt;%= form_for(model, "/article", {{"method","delete"}}) yields %&gt;
-      &lt;input type="submit" value="Delete"&gt;
-    &lt;% yields-end %&gt;
+    &lt;%= link(article_uri, "Delete", {
+      {"method","delete"}, {"confirm", "Are you sure ?"}
+    }) %&gt;
   &lt;/li&gt;
 &lt;/ul&gt;
 </code></pre>
 
 <p>
-  In the above code, we use a &lt;form&gt; to create a destroy link, since the http verb we need to use to
-  reach our destroy action is <i>DELETE</i>, rather than <i>GET</i>.
+  In the above code, we use the <code>Crails::uri()</code> helper to generate an URI from
+  parameters: it serializes each parameter as a string and separate them with slashes. In
+  this case, it will result in the following string: <code>/article/1</code> (depending on the article id).
+</p>
+
+<p>
+  Right below, we use the html template <code>link</code> helper to generate our links.
+  This helper provides some options allowing us to use the <i>DELETE</i> method in our delete
+  link, but also to add a confirm dialog. Note that these options won't work in an environment
+  where JavaScript has been disabled.
 </p>
 
 <p>
@@ -942,16 +965,348 @@ Article&amp; @model;
 <pre>crails scaffold model -m Comment -p std::string/commenter std::string/body</pre>
 
 <p>
-  This command only generates the Model files.
+  Now that the model is generated, we'll add a reference to the <code>Article</code> object:
 </p>
 
-<!--
-<div class="hint-box">
-  You can learn more about how to write database queries with <a href="https://www.codesynthesis.com/products/odb/doc/manual.xhtml#4">ODB's manal «Querying the Database » section</a>.
-</div>
--->
+<pre class="filepath">app/models/comment.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include &lt;crails/odb/model.hpp&gt;
+#include &lt;crails/datatree.hpp&gt;
+#include "article.hpp" // add the include file for Article
 
-<h2>10. What's next ?</h2>
+#pragma db object
+class Comment : public Crails::Odb::Model
+{
+  odb_instantiable()
+public:
+  static const std::string resource_name;
+
+  #pragma db view object(Comment)
+  struct Count
+  {
+    #pragma db column("count(" + Comment::id + ")")
+    size_t value;
+  };
+
+  void edit(Data);
+  void set_body(const std::string&amp; value) { this-&gt;body = value; }
+  const std::string&amp; get_body() const { return body; }
+  void set_commenter(const std::string&amp; value) { this-&gt;commenter = value; }
+  const std::string&amp; get_commenter() const { return commenter; }
+
+  // Add getter and setters for the article property:
+  void set_article(const std::shared_ptr&lt;Article&gt;&amp; value) { article = value; }
+  const std::shared_ptr&lt;Article&gt;&amp; get_article() const { return article; }
+
+private:
+  std::string commenter;
+  std::string body;
+  std::shared_ptr&lt;Article&gt; article; // Add the article property
+};
+</code></pre>
+
+<p>
+  Now, run the following commands to update your SQL database schema:
+</p>
+
+<pre><code>$ crails build
+$ build/tasks/odb_migrate/task odb</code></pre>
+
+<p>
+  If you check out the SQL table for <code>Comment</code>, you'll see that it now has an <code>article_id</code> column. By default, when loading the model from database, the
+  associated <code>Article</code> model will also be loaded within the comment.
+</p>
+
+<div class="hint-box">
+  Always loading associated objects might not be the best choice for performances. For this reason, you will often rely on <a href="https://www.codesynthesis.com/products/odb/doc/manual.xhtml#10">ODB views</a>
+  to customize your queries.
+</div>
+
+<h3>6.2 Adding a route for comments</h3>
+
+<p>
+  As with the <code>article</code> controller, we will need to add a route so that Crails know where we would like to navigate to see <code>comments</code>. Open up the router file again,
+  and edit as below:
+</p>
+
+<pre class="filepath">app/routes.cpp</pre>
+<pre><code class="language-cpp">#include "app/controllers/comment.hpp" // Add comment controller include
+#include "app/controllers/article.hpp"
+#include "app/controllers/welcome.hpp"
+#include &lt;crails/router.hpp&gt;
+
+void Crails::Router::initialize()
+{
+  resource_actions(article, ArticleController);
+  scope("article/:article_id", [this]()
+  {
+    resource_actions(comments, CommentController);
+  });
+  match_action("GET", "/", WelcomeController, index);
+}
+</code></pre>
+
+<div class="hint-box">
+  To learn about routing helpers such as <code>scope</code>, check out the <a href="http://localhost:3000/tutorials/routing/" target="_blank">Routing manual</a>.
+</div>
+
+<h3>6.3 Generating a controller</h3>
+
+<p>
+  With the model in hand, you can turn your attention to creating a matching controller. This time, we'll use a controller generator:
+</p>
+
+<pre>$ crails scaffold controller -m Comment</pre>
+
+<p>
+  This creates two files:
+</p>
+
+<table>
+  <tbody><tr>
+    <th>File/Directory</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>app/controllers/comment.hpp</td>
+    <td>The comment controller header.</td>
+  </tr>
+  <tr>
+    <td>app/controlelrs/comment.cpp</td>
+    <td>The comment controller source.</td>
+  </tr>
+</tbody></table>
+
+<p>
+  Like with any blog, our readers will create their comments directly after reading the article, and once they have added their comment,
+  will be sent back to the article show page to see their comment now listed. Due to this, our <code>CommentController</code> is there to
+  provide a method to create comments and delete spam comments when they arrive.
+</p>
+
+<p>
+  So first, we'll wire up the Article show template to let us make a new comment:
+</p>
+
+<pre class="filepath">app/views/articles/show.html</pre>
+<pre><code class="language-html">#include "app/models/article.hpp"
+#include "app/models/comment.hpp"
+
+Article&amp; @model;
+Comment new_comment;
+Crails::FormBuilder&lt;Comment&gt; form =
+  Crails::FormBuilder&lt;Comment&gt;(this, new_comment);
+std::string new_comment_path =
+  Crails::uri("article", model.get_id(), "comments");
+// END LINKING
+&lt;h1&gt;&lt;%= model.get_title() %&gt;&lt;/h1&gt;
+
+&lt;p&gt;&lt;%= model.get_content() %&gt;&lt;/p&gt;
+
+&lt;h2&gt;Add a comment:&lt;/h2&gt;
+&lt;%= form_for(new_comment, new_comment_path) yields %&gt;
+  &lt;div&gt;
+    &lt;%= form.label_for("commenter") %&gt;
+    &lt;%= form.text_field("commenter", &amp;Comment::get_commenter) %&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;%= form.label_for("body") %&gt;
+    &lt;%= form.text_area("body", &amp;Comment::get_body) %&gt;
+  &lt;/div&gt;
+  &lt;input type="submit" value="Send" /&gt;
+&lt;% yields-end %&gt;
+</code></pre>
+
+<p>
+  This adds a form on the <code>Article</code> show page that creates a new comment by calling the <code>CommentController</code> create action.
+</p>
+
+<p>
+  Let's wire up the <code>create</code> in our comment controller:
+</p>
+
+<pre class="filepath">app/controllers/comment.cpp</pre>
+<pre><code class="language-cpp">void CommentController::create()
+{
+  std::shared_ptr&lt;Article&gt; article;
+  Comment model;
+  auto query = odb::query&lt;Article&gt;::id == params["article_id"];
+
+  if (database.find_one(article, query))
+  {
+    model.set_article(article);
+    model.edit(params[Comment::resource_name]);
+    database.save(model);
+    redirect_to("article/" + params["article_id"].as&lt;std::string&gt;());
+  }
+  else
+    respond_with(HttpStatus::not_found);
+}
+</code></pre>
+
+<p>
+  You'll see a bit more complexity here than you did in the controller for articles. That's a side-effect of the nesting that you've set up.
+  Each request for a comment has to keep track of the article to which the comment is attached, thus the initial call to the
+  <code>database.find_one</code>, used with an <code>odb::query</code> to get the article in question.
+</p>
+
+<div class="hint-box">
+  You can learn more about how to write database queries with <a href="https://www.codesynthesis.com/products/odb/doc/manual.xhtml#4">ODB's manual «Querying the Database » section</a>.
+</div>
+
+<p>
+  In addition, we call the <code>set_article</code> method we created in the <code>Comment</code> model, before initializing and
+  saving the model to database.
+</p>
+
+<p>
+  Once we have made the new comment, we send the user back to the original article using the <code>redirect_to</code> method.
+  As we have already seen, this calls the show action of the <code>ArticleController</code> which in turn renders the <code>show.html</code> template.
+  This is where we want the comment to show, so we'll add that to the view in the next chapter.
+</p>
+
+<h3>6.4 Display associated comments on an article</h3>
+
+<p>
+  We will now add comments on the article show view. Firstly, we need to fetch the comments associated to an article. Open the
+  article controller source and edit the <code>show</code> method as following:
+</p>
+
+<pre class="filepath">app/controllers/article.cpp</pre>
+<pre><code class="language-cpp">#include "app/models/comment.hpp"
+
+...
+
+void ArticleController::show()
+{
+  odb::result&lt;Comment&gt; comments;
+  auto query = odb::query&lt;Comment&gt;::article-&gt;id == model-&gt;get_id();
+
+  database.find&lt;Comment&gt;(comments, query);
+  render("article/show", {
+    {"comments", &amp;comments}
+  });
+}
+</code></pre>
+
+<p>
+  Now, before rendering the show view, our <code>ArticleController</code> will query the database for any comments bound to the fetched article.
+  The database fills up a <code>odb::result</code> container which you can then use to loop over each comments.
+</p>
+
+<p>
+  Lastly, we'll update the view so that it displays each comments above the new comment form:
+</p>
+
+<pre class="filepath">app/views/articles/show.html</pre>
+<pre><code class="language-html">#include "app/models/article.hpp"
+#include "app/models/comment.hpp"
+
+Article&amp; @model;
+odb::result&lt;Comment&gt;&amp; @comments; // shared odb::result object
+Comment new_comment;
+Crails::FormBuilder&lt;Comment&gt; form =
+  Crails::FormBuilder&lt;Comment&gt;(this, new_comment);
+std::string new_comment_path =
+  Crails::uri("article", model.get_id(), "comments");
+// END LINKING
+&lt;h1&gt;&lt;%= model.get_title() %&gt;&lt;/h1&gt;
+
+&lt;p&gt;&lt;%= model.get_content() %&gt;&lt;/p&gt;
+
+&lt;h2&gt;Comments&lt;/h2&gt;
+&lt;% for (const Comment&amp; comment : comments) do %&gt;
+  &lt;p&gt;
+    &lt;strong&gt;Commenter:&lt;/strong&gt;
+    &lt;%= comment.get_commenter() %&gt;
+  &lt;/p&gt;
+  &lt;p&gt;
+    &lt;strong&gt;Comment:&lt;/strong&gt;
+    &lt;%= comment.get_body() %&gt;
+  &lt;/p&gt;
+&lt;% end %&gt;
+
+&lt;h2&gt;Add a comment:&lt;/h2&gt;
+&lt;%= form_for(new_comment, new_comment_path) yields %&gt;
+  &lt;div&gt;
+    &lt;%= form.label_for("commenter") %&gt;
+    &lt;%= form.text_field("commenter", &amp;Comment::get_commenter) %&gt;
+  &lt;/div&gt;
+  &lt;div&gt;
+    &lt;%= form.label_for("body") %&gt;
+    &lt;%= form.text_area("body", &amp;Comment::get_body) %&gt;
+  &lt;/div&gt;
+  &lt;input type="submit" value="Send" /&gt;
+&lt;% yields-end %&gt;
+</code></pre>
+
+<p>
+  Now you can add articles and comments to your blog and have them show up in the right places.
+</p>
+
+<h2>7. Security</h2>
+
+<h3>7.1 Basic Authentication</h3>
+
+<p>
+  If you were to publish your blog online, anyone would be able to add, edit and delete articles or delete comments.
+</p>
+
+<p>
+  Crails provides an HTTP authentication system that will work nicely in this situation.
+</p>
+
+<p>
+  In the <code>ArticlesController</code> we need to have a way to block access to the various actions if the person is
+  not authenticated. Here we can use the Crails <code>require_basic_authentication</code> method, which allows access
+  to the requested action if that method allows it.
+</p>
+
+<p>
+  To use the authentication system, we specify it in the <code>initialize</code> method of our <code>ArticleController</code>.
+  In our case, we want the user to be authenticated on every action except <code>index</code> and <code>show</code>, so we write
+  that:
+</p>
+
+<pre class="filepath">app/controllers/article.hpp</pre>
+<pre><code class="language-cpp">void ArticleController::initialize()
+{
+  Crails::Odb::Controller&lt;ApplicationController&gt;::initialize();
+  string action_name = get_action_name();
+
+  if (action_name != "index" &amp;&amp; action_name != "show")
+    require_basic_authentication("username", "password");
+
+  if (action_name == "show" || action_name == "edit" || action_name == "update" || action_name == "destroy")
+    require_model(params["id"]);
+}
+</code></pre>
+
+<p>
+  Now if you try to create a new article, you will be greeted with a basic HTTP Authentication challenge:
+</p>
+
+<p>
+  TODO: image
+</p>
+
+<p>
+  After entering the correct username and password, you will remain authenticated until a different username and password
+  is required or the browser is closed.
+</p>
+
+<p>
+  In more advanced use cases, you will want users to be able to register into your application:
+  to learn how Crails can help you with this behavior, move on to the <a href="../tutorials/signin">Sign-In</a> tutorial.
+</p>
+
+<h3>7.2 Other security considerations</h3>
+
+<p>
+  Security, especially in web applications, is a broad and detailed area. Security in your Crails application is covered
+  in more depth in the <a href="../tutorials/security">Crails Security Guide</a>.
+</p>
+
+<h2>8. What's next ?</h2>
 
 <p>Now that you've seen your first Crails application, you should feel free to update it and experiment on your own.</p>
 

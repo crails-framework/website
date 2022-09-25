@@ -1,0 +1,460 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Sidetasks</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  Sidetasks are parts of your application that can run in a separate process,
+  independently from the web application. They can be scheduled to run at a
+  later time, and will persist even as the server restarts.
+</p>
+
+<p>
+  In this tutorial, we'll use the <code>sidekix</code> to see how we can
+  add sidetasks in our application.
+</p>
+
+<h3>1.1 Guide assumptions</h3>
+
+<p>
+  This guide will be using the <code>sync</code> plugin to follow the progress
+  of sidetasks. You may want to take the <a href="../sync#task-progression">Task Progression</a>
+  tutorial first.
+</p>
+
+<h3>1.2 Preparation</h3>
+
+<p>
+  Create an application with the following command:
+</p>
+
+<pre>$ crails new -n scheduletask -p html
+$ cd scheduletask
+</pre>
+
+<p>
+  Then, add the sidekix and sync plugins:
+</p>
+
+<pre>$ crails plugins sidekix install
+$ crails plugins sync install
+</pre>
+
+<p>
+  Add a layout:
+</p>
+
+<pre>$ crails scaffold layout --toolkit bootstrap
+</pre>
+
+<p>
+  Lastly, we'll use the <code>task/show</code> view from the <a href="../sync#task-progression">Task Progression</a>
+  tutorial:
+</p>
+
+<pre class="filepath">app/views/task/show.html</pre>
+<pre><code class="language-html">std::string @task_uri;
+std::string @task_id;
+// END LINKING
+&lt;h1&gt;Task Watcher&lt;/h1&gt;
+&lt;h3&gt;Watching task &lt;%= task_id %&gt;&lt;/h3&gt;
+
+&lt;div class="progress"&gt;
+  &lt;div id="progress-bar" class="progress-bar" role="progressbar"&gt;
+    0/0
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+  const socket = new WebSocket("ws://0.0.0.0:3001/&lt;%= task_uri %&gt;");
+  socket.onmessage = event =&gt; {
+    const metadata = JSON.parse(event.data);
+    const percents = metadata.progress * 100;
+    const progressBar = document.querySelector("#progress-bar");
+
+    progressBar.textContent = `${metadata.item_progress}/${metadata.item_count}`;
+    progressBar.style.width = `${Math.ceil(percents)}%`;
+  };
+&lt;/script&gt;
+</code></pre>
+
+<h2>2. Sidetasks</h2>
+
+<h3>2.1 Creating a sidetask</h3>
+<p>
+  Let's first create a sidetask. The <code>sidekix</code> provides a command to set up
+  new tasks:
+</p>
+
+<pre>$ crails plugins sidekix add-task --name my-sidetask
+</pre>
+
+<p>
+  This will generate a source file for our task, which will export a function called
+  <code>my_sidetask</code>.
+</p>
+
+<p>
+  We'll open that file and implement our side task:
+</p>
+
+<pre class="filepath">tasks/sidekix/sidetasks/my_sidetask.cpp</pre>
+<pre><code class="language-cpp">#include &lt;crails/params.hpp&gt;
+#include &lt;crails/sync/task.hpp&gt;
+#include &lt;crails/logger.hpp&gt;
+#include &lt;unistd.h&gt; // provides usleep
+
+using namespace std;
+using namespace Crails;
+
+void my_sidetask(Crails::Params&amp; params)
+{
+  string task_scope = "sidetask";
+  string task_uid = params["sidekix"]["task_uid"];
+  unsigned int step_count = 100;
+  Sync::Task progress(task_scope, task_uid, step_count);
+
+  logger &lt;&lt; "Starting sidetask" &lt;&lt; Logger::endl;
+  while (step_count--)
+  {
+    usleep(25000);
+    progress.increment();
+  }
+  logger &lt;&lt; "Done with sidetask" &lt;&lt; Logger::endl;
+}
+</code></pre>
+
+<h3>2.2 Invoking a sidetask</h3>
+
+<p>
+  We shall now instructs sidekix to run our task. Create
+  the following controller:
+</p>
+
+<pre class="filepath">app/controllers/sidetask.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include "application.hpp"
+#include &lt;crails/sidekix.hpp&gt;
+
+class SidetaskController : public ApplicationController
+{
+public:
+  SidetaskController(Crails::Context&amp; context) :
+    ApplicationController(context)
+  {
+  }
+
+  void index()
+  {
+    std::string task_id;
+
+    task_id = Sidekix::async_task("my-sidetask");
+    vars["layout"] = std::string("layouts/application");
+    vars["task_id"] = task_id;
+    vars["task_uri"] = "sidetask/" + task_id;
+    render("task/show");
+  }
+};
+</code></pre>
+
+<p>
+  Let's create the matching routes for the <code>index</code> action and the <code>sidetask/:task_uid</code>
+  channel we just defined in our controller:
+</p>
+
+<pre class="filepath">app/routes.cpp</pre>
+<pre><code class="language-cpp">#include &lt;crails/router.hpp&gt;
+#include &lt;crails/sync/channel_actions.hpp&gt;
+#include "controllers/sidetask.hpp"
+
+void Crails::Router::initialize()
+{
+  match_action("GET", "/sidetask", SidetaskController, index);
+  match_sync_task("sidetask/:task_uid");
+}
+</code></pre>
+
+<p>
+  Build your server and go to <a href="http://localhost:3001/sidetask">http://localhost:3001/sidetask</a>: you
+  should witness the task progression.
+</p>
+
+<h3>2.3 Sending parameters to a sidetask</h3>
+
+<p>
+  Sidetasks can also use parameters. And we will use that feature by setting
+  the number of steps in our tasks in the controller. Open the controller file
+  and update the index method as such:
+</p>
+
+<pre class="filepath">app/controllers/sidetask.hpp</pre>
+<pre><code class="language-cpp">...
+  void index()
+  {
+    std::string task_id;
+    DataTree task_parameters;
+
+    task_parameters["step_count"] = 42;
+    task_id = Sidekix::async_task("my-sidetask", task_parameters);
+    ...
+  }
+...
+</code></pre>
+
+<p>
+  We've sent the <code>step_count</code> parameter to the asynchronous task: now
+  let's use that parameter in the sidetask. Open the sidetask source file:
+</p>
+
+<pre class="filepath">tasks/sidekix/sidetasks/my_sidetask.cpp</pre>
+<pre><code class="language-cpp">...
+void my_sidetask(Crails::Params&amp; params)
+{
+  string task_scope = "sidetasks";
+  string task_uid = params["sidekix"]["task_uid"];
+  // We can access our step_count parameter as such:
+  unsigned int step_count = params["step_count"].as&lt;int&gt;();
+  Crails::Sync::Task progress(task_scope, task_uid, step_count);
+
+  while (step_count--)
+  {
+    usleep(250);
+    progress.increment();
+  }
+}
+</code></pre>
+
+<h2>3. Task scheduling</h2>
+
+<h3>3.1 Schedule in</h3>
+<p>
+  A big interest of asynchronous task is the ability to schedule those
+  to run at a specific time. To do so, we replace <code>async_task</code>
+  with <code>schedule_task_in</code>:
+</p>
+
+<pre class="filepath">app/controllers/sidetask.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include &lt;chrono&gt; // add chrono for time operations
+#include &lt;crails/sidekix.hpp&gt;
+#include "application.hpp"
+
+class SidetaskController : public ApplicationController
+{
+public:
+  SidetaskController(Crails::Context&amp; context) :
+    ApplicationController(context)
+  {
+  }
+
+  void index()
+  {
+    using namespace std::literals::chrono_literals;
+    DataTree task_parameters;
+    std::string task_id;
+
+    task_parameters["step_count"] = 42;
+    task_id = Sidekix::schedule_task_in(
+      1m + 30s,
+      "my-sidetask",
+      task_parameters
+    );
+    vars["layout"] = std::string("layouts/application");
+    vars["task_id"] = task_id;
+    vars["task_uri"] = "sidetask/" + task_id;
+    render("task/show");
+  }
+};
+</code></pre>
+
+<p>
+  With this change, the task will run 10 seconds after the query is performed.
+</p>
+
+<h3>3.2 Schedule at</h3>
+<p>
+  You may also want to schedule a task at a specific time. This is done by
+  using the <code>schedule_task</code> function:
+</p>
+
+<pre class="filepath">app/controllers/sidetask.hpp</pre>
+<pre><code class="language-cpp">...
+  void index()
+  {
+    using namespace std::literals::chrono_literals;
+    DataTree task_parameters;
+    std::string task_id;
+
+    task_parameters["step_count"] = 42;
+    task_id = Sidekix::schedule_task(
+      std::chrono::system_clock::now() + 10s,
+      "my-sidetask",
+      task_parameters
+    );
+    ...
+  }
+...
+</code></pre>
+
+<div class="hint-box">
+  The <code>schedule_task</code> and <code>schedule_task_in</code> functions also
+  support <code>std::time_t</code> as a parameter, instead of chrono's time points
+  and durations.
+</div>
+
+<h2>4. Settings</h2>
+
+<p>
+  Using the <code>config/sidekix.cpp</code> file, you can configure the backends
+  used by Sidekix to store pending tasks.
+</p>
+
+<p>
+  By default, the initialization code looks like this:
+</p>
+
+<pre class="filepath">config/sidekix.cpp</pre>
+<pre><code class="language-cpp">...
+static const string task_store_directory = ".pending-tasks";
+
+SideTaskDatabase* SideTaskDatabase::initialize()
+{
+  if (Crails::environment == Crails::Test)
+    return new Tests::Database();
+  return new FileDatabase(task_store_directory);
+}
+</code></pre>
+
+<p>
+  It is a simple setup that configure a dummy database when running from
+  the Test environment, or a file-based database otherwise.
+</p>
+
+<h3>4.1 File database</h3>
+
+<p>
+  The default backend for Sidekix is a file-based backend: tasks are stored
+  as files, and fetched from the filesystem by the task runner.
+</p>
+
+<p>
+  You can customize the path of the folder in which the tasks will be recorded
+  as such:
+</p>
+
+<pre><code class="language-cpp">...
+
+SideTaskDatabase* SideTaskDatabase::initialize()
+{
+  return new Crails::Sidekix::FileDatabase("/usr/local/share/my-pending-tasks");
+}
+</code></pre>
+
+<h3>4.2 Redis database</h3>
+
+<p>
+  If you've added a Redis database to your application with the following command:
+</p>
+
+<pre>$ crails plugins redis install</pre>
+
+<p>
+  Then you may use the Redis backend for Sidekix tasks. The Redis backend is far more
+  appropriate: when running multiple instances of your application on several
+  machines, your sidetasks will be distributed accross all the instances, rather than
+  only visible on the one instance that had scheduled them.
+</p>
+
+<p>
+  If you have a Redis database configured in your <code>config/databases.cpp</code> file,
+  you can set up a Redis-backed sidetask database as such:
+</p>
+
+<pre><code class="language-cpp">...
+SideTaskDatabase* SideTaskDatabase::initialize()
+{
+  if (Crails::environment == Crails::Test)
+    return new Tests::Database();
+  return new RedisDatabase();
+}
+</code></pre>
+
+<h4>4.2.1 Configure the database used</h4>
+<p>
+  <code>RedisDatabase()</code> will use the default <code>redis</code> database configured in your <code>config/databases.cpp</code>
+  file. You can also setup a different configured database as such:
+</p>
+
+<pre><code class="language-cpp">  return new RedisDatabase("alternative-redis-db");
+</code></pre>
+
+<h4>4.2.2 Configure the storage key</h4>
+<p>
+  By default, the sidetasks will be stored in a sorted list with the key <code>sidekix-task</code>, but
+  you can also configure this:
+</p>
+
+<pre><code class="language-cpp">  return new RedisDatabase("redis", "my-custom-key");
+</code></pre>
+
+<h2>5. Testing</h2>
+<p>
+  When writing your application tests, you might want to check whether your
+  tasks have been scheduled properly. This is why a dummy backend is used
+  in the test environment, which you can interact with by getting a pointer
+  to the <code>TestDatabase</code>:
+</p>
+
+<pre><code class="language-cpp">  auto* database = reinterpret_cast&lt;Crails::Sidekix::TestDatabase*&gt;(
+    Crails::Sidekix::SideTaskDatabase::instance()
+  );
+</code></pre>
+
+<p>
+  With this pointer, you can perform several operations to check whether
+  your tasks have been properly added:
+</p>
+
+<pre><code class="language-cpp">  // Check that my-sidetask has been scheduled:
+  EXPECT(database-&gt;has_task("my-sidetask"), ==, true);
+
+  // Check that my-sidetask has been scheduled a specific amount of times
+  EXPECT(database-&gt;count("my-sidetask"), ==, 12);
+
+  // Check that my-sidetask has been scheduled at a specific time
+  EXPECT(database-&gt;scheduled_at("my-sidetask", timestamp), ==, true))
+</code></pre>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>

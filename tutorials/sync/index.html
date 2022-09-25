@@ -1,0 +1,568 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Frontend/backend real-time synchronization</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/Plaristote/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<h3>1.1 Guide Assumptions</h3>
+<p>
+In order to follow this guide, you should:
+</p>
+<ul>
+<li>Be familiar with <a href="../channels">channels</a>.</li>
+<li>Be familiar with the ODB plugin for crails<br>(the <a href="../../getting-started">getting started</a> tutorial should be enough)</li>
+</ul>
+
+<h3>1.2 Setup</h3>
+
+<p>
+  In this tutorial, we will build a minimalist message board that will update itself. Users will be able to
+  add messages to the board, and other users will see those appear are they are created.
+</p>
+
+<p>
+  To achieve this behaviour, we will use the <code>sync</code> plugin, which you can add to your application with the following
+  command:
+</p>
+
+<pre>$ crails plugins sync install</pre>
+
+<h2>2. ODB Transactions</h2>
+
+<p>
+  The sync plugin provides features to broadcast database transactions to your clients. This chapter will
+  focus on SQL transactions, using both the odb and sync plugins.
+</p>
+
+<h3>2.1 Server</h3>
+
+<p>
+  Let's start by generating a resource:
+</p>
+
+<pre>$ crails scaffold resource -n message -p std::string/message std::string/author</pre>
+
+<h4>2.1.1 Controller</h4>
+<p>
+  Controllers that interact with an SQL database inherit from the <code>Crails::Odb::Controller</code> class
+  template. To synchronize transactions with the client, we will use the second parameter of that template
+  to overload the default wrapper making for SQL queries with the <code>Crails::Odb::Sync::Connection</code>
+  class:
+</p>
+
+<pre class="filepath">app/controllers/message.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include "application.hpp"
+#include "app/models/message.hpp"
+
+// Define our controller with synchronization enabled:
+typedef Crails::Odb::Controller&lt;
+    ApplicationController,
+    Crails::Odb::Sync::Connection
+  &gt; MessageSuperController;
+
+class MessageController : public MessageSuperController
+{
+public:
+  MessageController(Crails::Context&amp;);
+
+  void initialize() override;
+  void finalize() override;
+
+  void index();
+  void show();
+  void create();
+  void update();
+  void destroy();
+private:
+  std::shared_ptr&lt;Message&gt; find_model(Crails::Odb::id_type id);
+  void require_model(Crails::Odb::id_type id);
+  void find_list();
+
+  std::shared_ptr&lt;Message&gt; model;
+  std::vector&lt;Message&gt; model_list;
+};
+</code></pre>
+
+<p>
+  Synchronization are broadcasted through channels. You may perform all synchronizations using a single channel,
+  or even use a channel for each of your model. In this example, we'll set up a channel for our controller:
+</p>
+
+<pre class="filepath">app/controllers/message.cpp</pre>
+<pre><code class="language-cpp">#include "message.hpp"
+#include &lt;crails/odb/to_vector.hpp&gt;
+#include "lib/odb/application-odb.hxx"
+
+using namespace std;
+
+MessageController::MessageController(Crails::Context&amp; context) : MessageSuperController(context)
+{
+  database.sync_transaction.set_channel(
+    Crails::Sync::Channels::singleton::get()-&gt;require_unlocked_channel("/message/sync")
+  );
+}
+
+...
+</code></pre>
+
+<h4>2.1.2 Router</h4>
+
+<p>
+  Now we just need to make the channel available via the router, so that clients can listen to it using
+  WebSockets:
+</p>
+
+<pre class="filepath">app/routes.cpp</pre>
+<pre><code class="language-cpp">#include "app/controllers/message.hpp"
+#include &lt;crails/router.hpp&gt;
+#include &lt;crails/sync/channel_actions.hpp&gt;
+
+void Crails::Router::initialize()
+{
+  // Append routes here (do not remove this line)
+  resource_actions(message, MessageController);
+  match_sync_channel("/message/sync", Crails::Sync::ChannelListener);
+}
+</code></pre>
+
+<div class="hint-box">
+  <code>ChannelListener</code> is similar to <code>ChannelClient</code>, but it does not have the ability
+  to broadcast messages: it is read-only.
+</div>
+
+<h3>2.2 Client</h3>
+
+<p>
+  We'll now have the message index automatically update when a message is added or
+  updated.
+</p>
+
+<p>
+  Let's start by updating the index view template. We need to make some changes so
+  that rows can be added and updated from a script:
+</p>
+
+<pre class="filepath">app/views/message/index.html</pre>
+<pre><code class="language-html">#include "app/models/message.hpp"
+#include &lt;boost/lexical_cast.hpp&gt;
+
+using namespace std;
+
+vector&lt;Message&gt; @models;
+string route = "message";
+// END LINKING
+
+&lt;%= tag("a", {{"href", '/' + route + "/new"}}) yields %&gt;
+  New
+&lt;% end %&gt;
+
+&lt;table class="table"&gt;
+  &lt;thead&gt;
+    &lt;th&gt;Author&lt;/th&gt;
+    &lt;th&gt;Content&lt;/th&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+&lt;% for (const Message&amp; model : models) do %&gt;
+    &lt;!-- the [data-id] attribute will help
+         our script find which rows to update --&gt;
+    &lt;tr data-id="&lt;%= model.get_id() %&gt;"&gt;
+      &lt;td&gt;&lt;%= model.get_author() %&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;%= model.get_content() %&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;% end %&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+</code></pre>
+
+<p>
+  Now that the view is ready, let's write a script that will listen to our
+  message channel and update the table when it receives notification of new
+  transactions:
+</p>
+
+<pre class="filepath">app/assets/messages.js</pre>
+<pre><code class="language-cpp">const socket = new WebSocket("ws://0.0.0.0:3001/message/sync");
+
+function updateRow(row, properties) {
+  row.children[0].textContent = properties.author;
+  row.children[1].textContent = properties.content;
+}
+
+function createRow(list, properties) {
+  const row = document.createElement("tr");
+
+  row.insertCell(document.createElement("td"));
+  row.insertCell(document.createElement("td"));
+  updateRow(row, properties;)
+  list.insertRow(row);
+}
+
+function forEachModel(list, callback) {
+  for (let id in list.message)
+    callback(id, list.message[id]);
+}
+
+socket.onmessage = function (event) {
+  const transaction = JSON.parse(event.data);
+  const list = document.querySelector("tbody");
+
+  forEachModel(transaction.updates, function(id, properties) {
+    const row = list.querySelector(`[data-id="${id}"]`);
+    row ? updateRow(row, properties) : createRow(list, properties);
+  });
+
+  forEachModel(transaction.removals, function(id, properties) {
+    const row = list.querySelector(`[data-id="${id}"]`);
+    if (row)
+      list.removeChild(row);
+  });
+}
+</code></pre>
+
+<p>
+  Now this might need some explaining. As you can see in the <code>onmessage</code> callback, the
+  transaction data is transmitted as JSON. Once the message received by the WebSocket is parsed,
+  the object received will contain two properties: <code>updates</code> and <code>removals</code>.
+  Added and edited models will appear in the former, while deleted models will appear in the former.
+</p>
+
+<p>
+  Within both <code>updates</code> and <code>removals</code>, models are then sorted by scope. In
+  this example, the <code>Message::scope</code> constant is used, which defaults to <i>message</i>.
+  This is why the <code>forEachModel</code> function loops over <code>list.message</code>.
+</p>
+
+<p>
+  Each scope itself is a map of all updated or deleted models, where the model id is used as key.
+</p>
+
+<p>
+  The <code>updates</code> object also provides all the model's attribute, which is how we update
+  or create the cells in the <code>createRow</code> and <code>updateRow</code> functions.
+</p>
+
+<div class="hint-box">
+  The model properties are rendered to JSON by using the <code>to_json</code> method of your model
+  (if you did not use a scaffold to create your model, don't forget to add that method). Alternatively,
+  if there is a json template matching your model's view constant (<code>Message::view</code> in this
+  exmaple), it will use this view instead.
+</div>
+
+<p>
+  Our script is not yet included into our index view. Let's fix that:
+</p>
+
+<pre class="filepath">app/views/message/index.html</pre>
+<pre><code class="language-html">#include "lib/assets.hpp" // add the assets include
+#include "app/models/message.hpp"
+#include &lt;boost/lexical_cast.hpp&gt;
+
+using namespace std;
+
+vector&lt;Message&gt; @models;
+string route = "message";
+// END LINKING
+
+...
+
+&lt;table class="table"&gt;
+...
+&lt;/table&gt;
+
+&lt;%= tag("script", {{"src", Assets::application_js}}) yields %&gt;
+&lt;% yields-end %&gt;
+</code></pre>
+
+<p>
+  And voilà, we're done. Build your server and go to <a href="http://localhost:3001/message">http://localhost:3001/message</a>
+  to see the result of your work.
+</p>
+
+<h2 id="task-progression">3. Task progression</h2>
+
+<p>
+  The <i>sync</i> plugin also provides tools to follow the progress of a task remotely.
+</p>
+
+<p>
+  Create an application with the following command:
+</p>
+
+<pre>$ crails new -n synctask -p html
+$ cd synctask</pre>
+
+<p>
+  Add the sync plugin:
+</p>
+
+<pre>$ crails plugins sync install</pre>
+
+<h3>3.1 Controller</h3>
+<p>
+  We'll now add a simple controller which will perform an asynchronous task when called upon:
+</p>
+
+<pre class="filepath">app/controller/task.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include "application.hpp"
+#include &lt;iostream&gt;
+
+class TaskController : public ApplicationController
+{
+public:
+  TaskController(Crails::Context&amp; context) :
+    ApplicationController(context)
+  {
+  }
+
+  void index()
+  {
+    std::thread(std::bind(run_async_task)).detach();
+  }
+
+private:
+  static void run_async_task()
+  {
+    for (int i = 60 ; i &gt; 0 ; --i)
+    {
+      std::cout &lt;&lt; "Incrementing task: " &lt;&lt; i &lt;&lt; std::endl;
+      sleep(1);
+    }
+  }
+};
+</code></pre>
+
+<p>
+  In the <code>index</code> action, we create an asynchronous task using <code>std::thread</code>.
+  We will now use the <code>Crails::Sync::Task</code> class, which will help us broadcast the progress
+  of the task over WebSockets.
+</p>
+
+<p>
+  Let's update the <code>index</code> action:
+  </p>
+
+<pre><code class="language-cpp">  void index()
+  {
+    int step_count = 60;
+    auto task = std::make_shared&lt;Crails::Sync::Task&gt;("task", step_count);
+
+    std::thread(std::bind(run_async_task, task, step_count));
+  }
+</code></pre>
+
+<p>
+  We instantiate the <code>Task</code> object with two parameters:<br>
+  - The scope "task", which is used to define the base path on which the progress will be broadcasted.<br>
+  - The step count, which should match the amount of time you expect to increment the task progress.
+</p>
+
+<p>
+  Now, let's include the task object in the <code>run_async_task</code> method:
+</p>
+
+<pre><code class="language-cpp">  static void run_async_task(std::shared_ptr&lt;Crails::Sync::Task&gt; task, int step_count)
+  {
+    for (int i = step_count ; i &gt; 0 ; --i)
+    {
+      std::cout &lt;&lt; "Incrementing task: " &lt;&lt; i &lt;&lt; std::endl;
+      sleep(1);
+      task-&gt;increment();
+    }
+  }
+</code></pre>
+
+<p>
+  A simple call to <code>task-&gt;increment()</code> is all it takes on the server part.
+</p>
+
+<h3>3.2 Router</h3>
+
+<p>
+  We now have to add routes for both our controller action, and the channel our task progress
+  will be broadcasted to:
+</p>
+
+<pre class="filepath">app/routes.cpp</pre>
+<pre><code class="language-cpp">#include &lt;crails/router.hpp&gt;
+#include &lt;crails/sync/channel_actions.hpp&gt; // don't forget this include
+#include "controllers/task.hpp"
+
+void Crails::Router::initialize()
+{
+  match_action("GET", "/task", TaskController, index);
+  match_sync_task("/tasks/:task_id");
+}
+</code></pre>
+
+<p>
+  The <code>match_sync_task</code> is a macro that creates the required route for task progress
+  broadcasting. It's composed of the task's scope and its id as a parameter.
+</p>
+
+<h3>3.3 View</h3>
+<p>
+  Now we'll create a view to display our task progress. Let's start by adding a Bootstrap layout:
+</p>
+
+<pre>$ crails scaffold layout --toolkit bootstrap
+</pre>
+
+<p>
+  Then create the following view:
+</p>
+
+<pre class="filepath">app/views/task/show.html</pre>
+<pre><code class="language-html">std::string @task_uri;
+std::string @task_id;
+// END LINKING
+&lt;h1&gt;Task Watcher&lt;/h1&gt;
+&lt;h3&gt;Watching task &lt;%= task_id %&gt;&lt;/h3&gt;
+
+&lt;div class="progress"&gt;
+  &lt;div id="progress-bar" class="progress-bar" role="progressbar"&gt;
+    0/0
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+  const socket = new WebSocket("ws://0.0.0.0:3001/&lt;%= task_uri %&gt;");
+  socket.onmessage = event =&gt; {
+    const metadata = JSON.parse(event.data);
+    const percents = metadata.progress * 100;
+    const progressBar = document.querySelector("#progress-bar");
+
+    progressBar.textContent = `${metadata.item_progress}/${metadata.item_count}`;
+    progressBar.style.width = `${Math.ceil(percents)}%`;
+  };
+&lt;/script&gt;
+</code></pre>
+
+<p>
+  We use a bootstrap progressbar to display the task progress, and a WebSocket to
+  receive the udpates. The update messages are in JSON, and feature a progress
+  value that goes from 0 to 1, as well as counters for the amount of tasks done,
+  and the total amount of task to complete.
+</p>
+
+<p>
+  We will now update the <code>index</code> action in our controller to provide
+  the <code>task_uri</code> and <code>task_uid</code> shared variable that our
+  view is expecting:
+</p>
+
+<pre class="filepath">app/controllers/task.hpp</pre>
+<pre><code class="language-cpp">  void index()
+  {
+    int step_count = 60;
+    auto task = std::make_shared&lt;Crails::Sync::Task&gt;("task", step_count);
+
+    std::thread(std::bind(run_async_task, task, step_count));
+    vars["layout"] = std::string("layouts/application");
+    vars["task_uri"] = task-&gt;uri();
+    vars["task_id"] = task-&gt;get_id();
+    render("task/show");
+  }
+</code></pre>
+
+<p>
+  Don't forget to also set the view layout to <code>layouts/application</code>.
+</p>
+
+<p>
+  Build and launch your server, and then go to <a href="http://localhost:3001/task">http://localhost:3001/task</a>:
+  you should see the task slowly update every 3 seconds or so.
+</p>
+
+<h3>3.4 Customization</h3>
+
+<h4>3.4.1 Update broadcasting rate</h4>
+<p>
+  The updates happen slowly due to the notification policy of the <code>Task</code> object.
+  To avoid firing too many notifications, the <code>Task</code> object only notify clients
+  of progresses by blocks of 5 percents by default.
+</p>
+
+<p>
+  Let's change our <code>index</code> action to use a different update rate:
+</p>
+
+<pre><code class="language-cpp">  void index()
+  {
+    int step_count = 60;
+    auto task = std::make_shared&lt;Crails::Sync::Task&gt;("task", step_count);
+
+    task-&gt;set_notification_step(1);
+    ...
+  }
+</code></pre>
+
+<p>
+  By calling <code>set_notification_step</code>, we tell our notifier to broadcast update
+  everytime the progress moves by 1 percent.
+</p>
+
+<h4>3.4.2 Custom notification messages</h4>
+<p>
+  You may also manually broadcast an update whenever you want by calling the <code>notify</code>
+  method:
+</p>
+
+<pre><code class="language-cpp">  static void run_async_task(std::shared_ptr&lt;Crails::Sync::Task&gt; task, int task_count)
+  {
+    ...
+    task-&gt;notify();
+    ...
+  }
+</code></pre>
+
+<p>
+  You may also add your own message to the broadcasted update:
+</p>
+
+<pre><code class="language-cpp">  task-&gt;notify("Hello world !");
+</code></pre>
+
+<p>
+  The client WebSocket will be able to access this message in the JSON data broadcasted, such as:
+</p>
+
+<pre><code class="language-cpp">  socket.onmessage = function (event) {
+    const data = JSON.parse(event.data);
+    console.log("Received task update with message:", data.message);
+  };
+</code></pre>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>

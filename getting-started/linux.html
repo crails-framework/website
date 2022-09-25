@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="en"><head>
     <meta charset="utf-8">
-    <title>Crails Framework - Installing on Linux</title>
+    <title>Crails Framework - Installing on Linux, FreeBSD and MacOS</title>
     <link rel="stylesheet" href="../css/application.css">
     <link rel="stylesheet" href="../css/code-qtcreator.css">
     <script src="../highlight.pack.js"></script>
@@ -22,9 +22,58 @@
     </div>
     <div id="content-wrapper">
       <div id="main">
-        <h1 id="installing-on-linux">Installing on Linux</h1>
+        <h1 id="installing-on-linux-freebsd-and-macos">Installing on Linux, FreeBSD and MacOS</h1>
 
-<h2 id="preparing-a-build-environment">Preparing a build environment</h2>
+<h2 id="using-the-install-script">Using the install script</h2>
+
+<p>The most simple way to install Crails on your system is to use the interactive install script, which you
+can download and run with the same following command:</p>
+
+<pre><code>bash &lt;(curl -s "https://raw.githubusercontent.com/crails-framework/crails/master/install.sh")
+</code></pre>
+
+<p>The install script will install all dependencies to <code>/usr/local</code> by default, and
+should work on any Unix-like system (Linux, FreeBSD, Mac).</p>
+
+<p>Make sure you have a C++ compiler (g++ or clang++) installed on your system before running the install
+script. The installer will let you pick your preferred compiler before installing crails.</p>
+
+<h3 id="database-backends">Database backends</h3>
+
+<p>The installer will prompt you to pick database backends.</p>
+
+<p>If you pick any SQL backends, you will be asked whether you also want to install the ODB compiler. The
+ODB compiler is essential to building SQL-backed applications. However, the ODB compiler can only be
+compiled with g++, so make sure you have gcc and the <code>gcc-plugins</code> development package installed.</p>
+
+<h3 id="cometcpp">Comet.cpp</h3>
+
+<p>The installer will then ask you whether you want to build Comet or not. Comet is a MVC frontend library
+that uses a <em>C++ to JavaScript transpiler</em>, which can be very useful to share code betweem backend and
+frontend.</p>
+
+<p>You will need to have <a href="https://docs.leaningtech.com/cheerp/">Cheerp</a> installed beforehand, if you
+want to build Comet.</p>
+
+<h3 id="using-system-libraries">Using system libraries</h3>
+
+<p>Lastly, the installer will ask you if you want to use system libraries when available.</p>
+
+<p>Using this option will reduce the compilation time and the size of the packaged web application.
+However, you are expected to ensure that the required boost libraries are installed on both
+your system and your production environments.</p>
+
+<p>Not using this option (or leaving the default) will locally build all dependencies for crails.
+When packaging the application, all dependencies will be included, meaning you won’t need
+to use your production’s machine package managers.</p>
+
+<h2 id="custom-build">Custom build</h2>
+
+<p>Alternatively, you can also build crails on your own. It will give you more options for building,
+and will make you familiar with how crails is built for deployment. If you want to try this
+method, the following chapters of this tutorials are meant to guide you through the steps:</p>
+
+<h2 id="preparing-a-build2-package">Preparing a build2 package</h2>
 
 <p>Crails uses the build2 build system, which will take care of managing dependencies and packaging
 the Crails for your development or production environments.</p>
