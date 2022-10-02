@@ -8,6 +8,20 @@ compile "/css/*.scss" do
   write @item.identifier.without_ext + ".css"
 end
 
+compile "/comet/**/*.md" do
+  filter :kramdown
+  layout "/comet.*"
+  filter :relativize_paths, type: :html5
+  write @item.identifier.without_ext + ".html"
+end
+
+compile '/comet/**/*.html.erb' do
+  layout '/comet.*'
+  filter :erb
+  filter :relativize_paths, type: :html5
+  write item.identifier.without_ext.gsub(/\.html$/, '') + '/index.html'
+end
+
 compile "/**/*.md" do
   filter :kramdown
   layout "/default.*"

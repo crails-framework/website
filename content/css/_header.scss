@@ -45,3 +45,19 @@
     }
   }
 }
+
+.comet-style #header {
+  h1 { color: white; }
+  background: rgb(0,0,0);
+  background: linear-gradient(138deg, rgba(0,0,0,1) 0%, rgba(50,50,50,1) 8%, rgba(150,150,150,1) 35%, rgba(0,0,0,1) 100%);
+  border-bottom: 2px black solid;
+  li {
+    > a {
+      color: white;
+      border-left: 2px black solid;
+      &:hover {
+        background-color: black;
+      }
+    }
+  } 
+}

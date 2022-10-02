@@ -1,0 +1,1431 @@
+---
+title: Getting Started with Comet.cpp
+---
+
+<div id="with-index"></div>
+
+<h2>1. Guide Assumptions</h2>
+<p>
+  This guide is designed for beginners who want to get started with Comet.cpp from scratch. It does not assume any prior experience with Comet.
+</p>
+
+<p>
+  We assume you are already familiar with the C++ programming language and CMake building tools.
+</p>
+
+<p>
+We also assume you are familiar with the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Document_Object_Model">JavaScript DOM API</a>, as a lot of the work done on developing browser-side web applications revolves around interacting with the Document Object Model.
+</p>
+
+<h2>2. Creating a new Comet Application</h2>
+<p>
+  The best way to read this guide is to follow it step by step. All steps are essential to run this example and no additional code or steps are needed.
+</p>
+
+<p>
+  By following this guide, you'll learn how to create a Single Page Application by creating a simple todo list application.
+</p>
+
+<h3>2.1 Installing Comet.cpp</h3>
+<p>
+  First, if you haven't already done it before, you need to install Comet.cpp.
+  You may do so by following the  guide corresponding to your operating system:
+</p>
+<ul>
+  <li><a href="/comet/getting-started/linux.html" target="_blank">Linux, FreeBSD, MacOS</a></li>
+</ul>
+
+<h3>2.2 Creating the Todo application</h3>
+<p>
+  Comet comes with a application generator tool which will provde you the fundation of a fresh Comet application, so that you don't have to write it yourself.
+</p>
+
+<p>
+  To use this generator, open a terminal, navigate to the directory in which you wish to create the application, and type
+</p>
+
+<pre>$ comet new --name todo</pre>
+
+<p>
+  This will crate a Comet application called Todo in a `todo` directory.
+</p>
+
+<p>After you create the todo application, switch to its folder:</p>
+
+<pre>$ cd todo</pre>
+
+<p>
+The <code>todo</code> directory has a number of auto-generated files and folders that make up the structure of a Comet application. Here's a basic rundown on the function of each file and  folders that Comet created by default:
+</p>
+
+<table>
+  <tr>
+    <th>File/Folder</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>main.cpp</td>
+    <td>Defines the <code>webMain</code> function: it is the entry point of your application.</td>
+  </tr>
+  <tr>
+    <td>application.hpp</td>
+    <td>Defines a singleton class containing the globals of your application.</td>
+  </tr>
+  <tr>
+    <td>routes.cpp</td>
+    <td>This is where you'll bind your routes with your controller methods.</td>
+  </tr>
+  <tr>
+    <td>config.json</td>
+    <td>This file contains configuration variable for your HTML templates.</td>
+  </tr>
+  <tr>
+    <td>index.html</td>
+    <td>A simple html file from which you can run your application.</td>
+  </tr>
+</table>
+
+<h2>3. Hello, Comet !</h2>
+
+<h3>3.1 Route handlers</h3>
+<p>
+  To begin with, let's get some text up on screen quickly. We'll implement
+  a simple <i>route handler</i> that will display "Hello World !". Update the router as following:
+</p>
+
+<pre class="filepath">routes.cpp</pre>
+<%= code_block <<CPP
+#include <comet/router.hpp>
+#include <comet/globals.hpp>
+
+using namespace Comet;
+
+void Router::initialize()
+{
+  match("/?", [](const Params&)
+  {
+    body > Element("h1").text("Hello World !");
+  });
+}
+CPP
+%>
+
+<p>
+  The <code>match</code> method allows you to define a pattern and a callback which will be evaluated when the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Location/hash" target="_blank">location hash</a> changes.
+</p>
+
+<p>
+  The first parameter is the pattern that matches the route. In this case, <code>/?</code> will match for the hashes <code>#</code> and <code>#/</code>, making this route trigger by default when the application loads.
+</p>
+
+<h3>3.2 DOM semantics</h3>
+<p>
+  Next comes the lambda. We'll go over the <code>Params</code> objet later. Focus on the lambda's body for now:
+</p>
+
+<%= code_block <<CPP
+  body > Element("h1").text("Hello World !");
+CPP
+%>
+
+<p>
+  The <code>Comet::body</code> global points to <code>document.body</code>,
+  which is a DOM element. In Comet, you can append an element or a list
+  of elements to another element by using the <code>operator&gt;</code>.
+</p>
+
+<p>
+  In this case, we create a DOM element with the tag &lt;h1&gt; using
+  the <code>Comet::Element</code> class, and use the <code>text</code>
+  method to set its inner text to "Hello World !".
+</p>
+
+<p>
+  We've just scratched the surface : using this syntax, you can build complete HTML documents. Check out the following example:
+</p>
+
+<%= code_block <<CPP
+  body > Elements{
+    Element("h1").text("Hello World !"),
+    Element("div") > Element("span").text("Welcome to Comet.cpp !")
+  }
+CPP
+%>
+
+<p>
+  Here, we've used <code>Comet::Elements</code> to append a list
+  of two elements, rather than a single one. Using the same
+  initialization semantics, we were able to nest the creation
+  of a &lt;span&gt; element containing our subtitle.
+</p>
+
+<h3>3.3 Build and run</h3>
+
+<p>
+Let's see what our application looks like. Build your application
+by running the following command:
+</p>
+
+<pre>$ comet build</pre>
+
+<p>
+Once the process is over, open the <code>index.html</code> file:
+</p>
+
+<pre>$ xdg-open index.html</pre>
+
+<p>
+Your application should warmly greet you with an "hello world":
+</p>
+
+<img src="/images/comet/getting-started/hello-world.jpg" />
+
+<h2>4. Take control with Controllers</h2>
+<p>
+  We've learn how to implement simple route handlers, without using
+  the MVC components of Comet. In this chapter, we'll introduce the
+  MVC pattern, starting from the C of Controllers.
+</p>
+
+<h3>4.1 Scaffolding a controller</h3>
+<p>
+  Firstly, we'll <i>scaffold</i> a new controller using the command
+  line interface:
+</p>
+
+<pre>$ comet scaffold controller -n Todo</pre>
+
+<p>
+  The <i>scaffold</i> comment role is to speed up your work by
+  providing you with the basic structure for controllers, models
+  or views. The command we just ran created the <code>controllers/todo.hpp</code>
+  and <code>controllers/todo.cpp</code> file.
+</p>
+
+<h3>4.2 Actions</h3>
+
+<p>
+  Actions are method of a controller designed to be called from
+  a <code>Router</code>. It's typically the place where you'll
+  interact with remote servers and render views.
+</p>
+
+<p>
+  Declare the <code>index</code> action which will greet our
+  users to our todo list:
+</p>
+
+<pre class="filepath">controllers/todo.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include <comet/controller.hpp>
+
+class TodoController : public Comet::Controller
+{
+public:
+  TodoController(const Comet::Params&);
+
+  Comet::Promise initialize() { ... }
+  Comet::Promise finalize() { ... }
+
+  // declare your action method:
+  void index();
+};
+CPP
+%>
+
+<p>
+  And implement it in the controller's source file:
+</p>
+
+<pre class="filepath">controllers/todo.cpp</pre>
+<%= code_block <<CPP
+#include "todo.hpp"
+#include <comet/globals.hpp>
+#include <comet/comment_element.hpp>
+
+using namespace std;
+using namespace Comet; // <- include this namespace
+
+TodoController::TodoController(const Params& params)
+  : Comet::Controller(params)
+{
+}
+
+// implement the index action:
+void TodoController::index()
+{
+  body.empty();
+  body > Element{
+    Element("h1").text("Todo Application"),
+    Elements("div") > Elements{
+      Element("input", {
+        {"type","text"},
+        {"placeholder","add task here"}
+      }),
+      Element("button").text("Add")
+    },
+    Element("div") > Elements{
+      Element("h2").text("Your tasks:"),
+      CommentElement("Anchor element")
+    }
+  };
+}
+CPP
+%>
+
+<p>
+  Similarly to what we've seen in the <i>DOM semantics</i> chapter, we
+  modify the DOM to clear the HTML document, and append a small interface
+  to add tasks.
+</p>
+
+<p>
+  Let's now add this action to the router:
+</p>
+
+<pre class="filepath">routes.cpp</pre>
+<%= code_block <<CPP
+#include <comet/router.hpp>
+#include "controllers/todo.hpp"
+
+using namespace Comet;
+
+void Router::initialize()
+{
+  match_action("/todo", TodoController, index);
+}
+CPP
+%>
+
+<p>
+  The <code>match_action</code> macro works similarly to the <code>match</code>
+  router method. When the location hash matches your route, it will instantiate
+  your controller, initialize it, and call your action method.
+</p>
+
+<div class="hint-box">
+  <code>match_action</code> also handles your controller lifetime. Your controller
+  will remain in memory until right before a new route is triggered. You can react
+  to such events in your controller's destructor.
+</div>
+
+<p>
+  Let's see how that looks: build your application with the <code>comet build</code>
+  command, open the <code>index.html</code> file, and append the following characters
+  to the URL bar: <code>#/todo</code>.
+</p>
+
+<p>
+  Your controller action will trigger, and you'll see the elements we created earlier
+  appear before your eyes:
+</p>
+
+<img src="/images/comet/getting-started/task-dom.jpg" />
+
+<h3>4.3 DOM Events</h3>
+
+<p>
+  We've seen how to design HTML document using the DOM syntax... but we don't react to
+  events yet. Let's see how we would react to our UI's button being clicked on:
+</p>
+
+<pre class="filepath">controllers/todo.cpp</pre>
+<%= code_block <<CPP
+void TodoController::index()
+{
+  // Define elements outside the DOM initializer:
+  static Element button("button");
+  static Element input("input");
+  static CommentElement anchor("Anchor element");
+
+  button.events->on("click", [&](client::MouseEvent*)
+  {
+    Element("div")
+      .text(input.value<string>())
+      .insert_after(anchor);
+    input.value("");
+  });
+  body.empty();
+  body > Elements{
+    Element("h1").text("Todo Application"),
+    Elements("div") > Elements{
+      input.attr({
+        {"type","text"},
+        {"placeholder","add task here"}
+      }), // <- We insert the input here
+      button.text("Add") // <- We insert our button here
+    },
+    Elements("div") > Elements{
+      Element("h2").text("Your tasks:"),
+      anchor // <- Lastly, the anchor element goes here
+    }
+  };
+}
+CPP
+%>
+
+<p>
+  Note that we create three static DOM elements at the top of our function. We could also
+  store these into the class, but we've used static variables to make this chapter more readable.
+</p>
+
+<p>
+  We start by adding an event handler on the button, by using the <code>events</code> property.
+  The event we receive has the <code>client::MouseEvent*</code> type: it is a native JavaScript
+  event (<a href="https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent">MouseEvent</a>),
+  directly accessible from C++ by using <i>Cheerp</i>'s <code>client</code> namesapce. 
+</p>
+
+<p>
+  We don't rely on the event in this case: we just want to append a new line to our task list,
+  using the value of our text input.
+</p>
+
+<p>
+  This is where the <code>anchor</code> element come from. Anchor is a word we used to call a element that serves as a reference to figure out where new elements should be inserted into the DOM.
+  This is where the <code>CommentElement</code> enters the ring. It implements a DOM comment,
+  which is entirely invisible to the user, and doesn't disturb the HTML document's layout.
+  <code>CommentElement</code>s are the ideal candidate for an <i>anchor</i>: that is, a DOM
+  element that we use as reference to know where to append new elements in the DOM.
+</p>
+
+<p>
+  To add a line to our task list, we just have to ensure that the anchor is present in the DOM
+  where we want our new elements to pop. Then, we use the <code>insert_before</code> or <code>insert_after</code> method, depending on whether we want new elements to appear on top or at the bottom of a list. Here, we want the newest elements on top, so we use <code>insert_after</code> such as:
+</p>
+
+<%= code_block <<CPP
+  Element("div")
+    .text("Some text")
+    .insert_after(anchor);
+CPP
+%>
+
+<p>
+  <code>input.value&lt;string&gt;()</code> is used to retrieve the value of an &lt;input&gt; element, in this
+  case, the text content of our <code>input</code> element. We then use <code>input.value("")</code>
+  to clear the field.
+</p>
+
+<h2>5. Knock your SOC off with Views</h2>
+<p>
+  Up until now, we've made simple views and defined them entirely in our controllers. It allowed
+  us to learn the DOM syntax, which will regularly be useful to you when performing small changes
+  over your interfaces.
+</p>
+
+<p>
+However, this doesn't follow the <a href="https://en.wikipedia.org/wiki/Separation_of_concerns" target="_blank"><i>Separation Of Concern</i></a> principle, which is a worthy ally
+  in any project of a reasonable size. We're now going to learn about a tool that Comet provides to
+  help us being more SOC-friendly: the view templating tools.
+</p>
+
+<h3>5.1 Scaffolding a layout</h3>
+<p>
+  Our first step will be to create a <i>layout</i> for our application. Comet views are always rendered
+  within a layout view - except the layout views themselves, which get rendered directly in the &lt;body&gt; element of a page, or any element which responds to the <code>[comet-app="main"]</code> selector.
+</p>
+
+<p>
+  Start by scaffolding a our layout with the following command:
+</p>
+
+<pre>$ comet scaffold layout -n application_layout</pre>
+
+<p>
+  This will generate two files for you:
+</p>
+
+<table>
+  <tr>
+    <th>File</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>views/layouts/appication_layout.html</td>
+    <td>This is the html template for your view</td>
+  </tr>
+  <tr>
+    <td>views/layouts/application_layout.hpp</td>
+    <td>
+      This is an object extending on your html template, allowing you to implement C++ view logic
+      separately from the HTML.
+    </td>
+  </tr>
+</table>
+
+<p>
+  Let's take a look at the <code>html</code> file first:
+</p>
+
+<%= html_block <<HTML
+<template>
+  <body>
+    <slot name="content"></slot>
+  </body>
+</template>
+HTML
+%>
+
+<p>
+  This is as simple as a layout can get: it just defines a &lt;slot&gt; called <i>content</i>.
+  Slots are used to insert your own custom elements in a view template: any layout you create
+  is expected to expose such a slot with the <i>content</i> name. It is where your view's content
+  will be displayed.
+</p>
+
+<p>
+  A layout can be used to render elements that are common in many views. If you want all your
+  pages to display the application name, you could do it this way:
+</p>
+
+<%= html_block <<HTML
+<template>
+  <body>
+    <h1>Todo Application</h1>
+    <slot name="content"></slot>
+  </body>
+</template>
+HTML
+%>
+
+<h3>5.2 Scaffolding a view</h3>
+<p>
+  We have a layout. The next step is to create a view that will be rendered inside the layout.
+  Use the following command to scaffold a view:
+</p>
+
+<pre>$ comet scaffold view -n TodoView</pre>
+
+<p>
+  This will create the files <code>views/todo_view.hpp</code> and <code>views/todo_view.html</code>.
+</p>
+
+<p>
+  We will edit these file to re-implement the behaviour we've created in the controller chapter, but
+  using views instead of the DOM syntax:
+</p>
+
+<pre class="filepath">views/todo_view.html</pre>
+<%= html_block <<CPP
+<template>
+  <body>
+    <div>
+      <input type="text" placeholder="add task here" />
+      <button>Add</button>
+    </div>
+    <div>
+      <h2>Your tasks:</h2>
+    </div>
+  </body>
+</template>
+CPP
+%>
+
+<h3>5.3 Rendering a view</h3>
+<p>
+  Let's see if this thing works ! Open the TodoController source file and update the index action's method:
+</p>
+
+<pre class="filepath">controllers/todo.cpp</pre>
+<%= code_block <<CPP
+// Add the includes to our layout and views:
+#include "views/layouts/application_layout.hpp"
+#include "views/todo_view.hpp"
+
+...
+
+void TodoController::index()
+{
+  use_layout<ApplicationLayout>()
+    .render<TodoView>();
+}
+CPP
+%>
+
+<p>
+  It's all it takes: the <code>use_layout</code> will instantiate an ApplicationLayout and append it to
+  the view, then the <code>render</code> method wil instantiate our view and append to the the layout's
+  content &lt;slot&gt;.
+</p>
+
+<div class="hint-box">
+  The <code>render</code> method takes your view's constructor parameters as its own parameters, and returns
+  a <code>std::shared_ptr</code> of your custom element.
+</div>
+
+<p>
+  You can now build your application and open the <code>index.html</code> file again.
+</p>
+
+<h3>5.4 Making interacting views</h3>
+
+<p>
+  We've generated the same interface as before using the template system instead of the DOM C++ syntax. However,
+  it isn't interactive yet. Let's tackle that issue. The first thing we need is a way to interact with our DOM
+  elements:
+</p>
+
+<h4>5.4.1 Accessing your view elements</h4>
+<p>
+  There are several ways to interact with your view elements. The first one we'll see is how to get a handle on your views element. It's done by using the <code>ref</code> attribute. Update the &lt;input&gt; and &lt;button&gt; elements as such:
+</p>
+
+<%= html_block <<CPP
+  <input ref="add_input" type="text" placeholder="add task here" />
+  <button ref="add_button">Add</button>
+CPP
+%>
+
+<p>
+  Using the <code>ref</code> attribute make these elements visible from your custom element class: we can now implement event handlers in our element class as such:
+</p>
+
+<%= code_block <<CPP
+#pragma once
+#include "templates/todo_view.hpp"
+
+class TodoView : public HtmlTemplate::TodoView
+{
+public:
+  TodoView() : HtmlTemplate::TodoView
+  {
+    add_button.events->on("click", [this]()
+    {
+      add_task(add_input.value<std::string>());
+      add_input.value("");
+    });
+  }
+
+  void add_task(const std::string& content)
+  {
+  }
+};
+CPP
+%>
+
+<p>
+  This way we can react to view events and interact with our DOM elements from our C++ code.
+</p>
+
+<h4>5.4.2 Bindings</h4>
+
+<p>
+  Views provide simple ways to share and display C++ values to your HTML templates. We'll explore
+  these possibilities by adding a <code>std::vector</code> container in our template that will store
+  our task list:
+</p>
+
+<%= html_block <<HTML
+<template>
+  <head>
+    <attribute type="std::vector<std::string>" name="tasks" />
+  </head>
+  <body>
+    ...
+  </body>
+</template>
+HTML
+%>
+
+<p>
+We've added a &lt;head&gt; section to our view template: this section is used to define a view's metadata, such as properties, dependencies towards other custom elements, or even custom C++ code to include into their headers.
+</p>
+
+<p>
+We use the &lt;attribute&gt; element to add a <code>vector</code> container to our custom element. Let's use it
+in a binding:
+</p>
+
+<%= html_block <<HTML
+<template>
+  ...
+  <body>
+    ...
+    <div class.bind='tasks.size() ? "task-list" : "task-list-empty"'>
+      <h2>Your tasks:</h2>
+    </div>
+  </body>
+</template>
+HTML
+%>
+
+<p>
+  The <code>.bind</code> suffix can be used on any attribute of a DOM element to assign a value from C++.
+</p>
+
+<p>
+  On top of DOM attributes, you can also use <code>.bind</code> with these Comet-defined attributes:
+</p>
+
+<ul>
+  <li><code>show.bind</code> can be bound to a boolean value to make an element visible or hidden.</li>
+  <li><code>text.bind</code> can be used to set a DOM element's <code>textContent</code> property.</li>
+  <li><code>innerhtml.bind</code> can be used to set a DOM element's <code>innerHTML</code> property.</li>
+</ul>
+
+<p>Here's an example making use of these Comet-defined attributes:</p>
+
+<%= html_block <<HTML
+<template>
+  ...
+  <body>
+    ...
+    <div show.bind="tasks.size()">
+      <h2>Your <span text.bind="tasks.size()" /> tasks:</h2>
+    </div>
+  </body>
+</template>
+HTML
+%>
+
+<p>
+  With these bindings, the task list will be hidden when it's empty, and the task list title will
+  display the amount of tasks present in the list.
+</p>
+
+<p>
+  Let's now implement the <code>add_task</code> method in our custom element header:
+</p>
+
+<pre class="filepath">views/todo_view.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include "templates/todo_view.hpp"
+
+class TodoView : public HtmlTemplate::TodoView
+{
+  ...
+
+  void add_task(const std::string& content)
+  {
+    tasks.push_back(content);
+    trigger_binding_updates();
+  }
+};
+CPP
+%>
+
+<p>
+  As the <code>tasks</code> attribute created in our view template is visible from our custom element header, we can merely use <code>push_back</code> to append new elements to it.
+</p>
+
+<p>
+  Afterwards, we call the <code>trigger_binding_updates</code> method: this is when the magic happens. The code
+  in every bound attribute from your view will run, updating your entire view.
+</p>
+
+<div class="hint-box">
+  Updating an entire view can be considered overkill. This is merely the default behavior, for simplicity purposes:
+  on more complex applications, you can use <i>signal bindings</i> to selectively update parts of your views.
+</div>
+
+<h4>5.4.3 Repeaters</h4>
+
+<p>
+  While we've been able to pull C++ values into our template, we still haven't displayed the actual list of tasks.
+  In Chapter 4, we did that by creating an anchor element, and manually creating each element in our controller.
+</p>
+
+<p>
+  In this chapter, we'll see a more sophisticated way of achieving the same result by using a <i>repeater</i>:
+</p>
+
+<%= html_block <<CPP
+<template>
+  <head>
+    <attribute type="std::vector<std::string>" name="tasks" />
+  </head>
+  <body>
+    ...
+    <div show.bind="tasks.size()">
+      <h2>Your <span text.bind="tasks.size()" /> tasks:</h2>
+      <!-- Here comes the repeater: -->
+      <div repeat.for="task of [std::vector<std::string>]tasks">
+        <b>Task</b>: <span text.bind="task" />
+      </div>
+    </div>
+  </body>
+</template>
+CPP
+%>
+
+<p>
+  The <code>repeat.for</code> attribute specifies that a given element will be repeated for each element in a container.
+</p>
+
+<p>
+  The element containing the <code>repeat.for</code> attribute is the one that gets replicated, meaning you could also achieve the same result with the following:
+</p>
+
+<%= html_block <<CPP
+<div repeat.for="task of [std::vector<std::string>]tasks"
+     innerhtml.bind='"<b>Task</b>: " + task'>
+</div>
+CPP
+%>
+
+<div class="hint-box">
+  Be careful that binding <code>innerhtml</code> opens the door to HTML injection, as any HTML present in the
+  <code>task</code> variable won't be escaped. Binding <code>text</code> instead prevents that issue.
+</div>
+
+<h4>5.4.4 View events</h4>
+<p>
+  You may also connect DOM events to C++ methods directly from the view. In this chapter, we'll refactore our custom element code by handling the <code>click</code> event within our view template:
+</p>
+
+<%= html_block <<CPP
+<template>
+  <head>
+    <attribute type="std::vector<std::string>" name="tasks" />
+    <script>
+      virtual void add_task(const std::string&) = 0;
+    </script>
+  </head>
+  <body>
+    <div>
+      <input ref="add_input" type="text"
+              placeholder="add task here" />
+      <button click.trigger="add_task(add_input.value())">
+        Add
+      </button>
+    </div>
+    <div>
+      <h2>Your tasks:</h2>
+      <div repeat.for="task of [std::vector<std::string>]tasks">
+        <b>Task</b>: <span text.bind="task" />
+      </div>
+    </div>
+  </body>
+</template>
+CPP
+%>
+
+<p>
+  We've added two things here:
+</p>
+
+<ul>
+<li>
+  First, we added a &lt;script&gt; section in the &lt;head&gt; section, and used it to declare <code>add_task</code> as a pure virtual method.
+</li>
+
+<li>
+  Secondly, we added the <code>click.trigger</code> attribute to our &lt;button&gt; and used it to call the <code>add_task</code> method.
+</li>
+</ul>
+
+<p>
+  As a result, our custom element header doesn't need its constructor anymore. Open the header file, remove the constructor, and add the <code>override</code> keyword after the <code>add_task</code> declaration.
+</p>
+
+<%= code_block <<CPP
+#pragma once
+#include "templates/todo_view.hpp"
+
+class TodoView : public HtmlTemplate::TodoView
+{
+public:
+  void add_task(const std::string& content) override
+  {
+    tasks.push_back(content);
+    trigger_binding_updates();
+  }
+};
+CPP
+%>
+
+<h3>5.5 Custom Elements</h3>
+
+<p>
+  Custom Elements are C++ elements that can be instantiated directly from html templates. Now, you've already
+  created Custom Elements: truth is, views are already Custom Elements. Basically, "view" is the name we give
+  to a Custom Element that's rendered in a Layout and from a Controller.
+</p>
+
+<p>
+  Custom Elements don't even need to use html templates. Let's start by creating a simple Custom Element
+  that will display a single task:
+</p>
+
+<pre class="filepath">elements/task_line.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include <comet/custom_element.hpp>
+
+class TaskLine : public Comet::CustomElement
+{
+  Comet::Element text;
+public:
+  TaskLine() : Comet::CustomElement("div")
+  {
+    text = Comet::Element("label");
+    *this > text;
+  }
+
+  void set_text(const std::string& value)
+  {
+    text.text(value);
+  }
+};
+CPP
+%>
+
+<p>
+  This is as simple as it gets: we created a class inheriting <code>Comet::CustomElement</code>, then
+  as it gets constructed, we defined its tagName to "div", and we append a &lt;label&gt; element to
+  its children list.
+</p>
+
+<h4>5.5.1 Instantiate a Custom Element from a view</h4>
+
+<p>
+  Now that we've created our custom element, let's instantiate it from our todo view. Before
+  using our new element, we must require it in our view's &lt;head&gt; section:
+</p>
+
+<pre class="filepath">views/todo_view.hpp</pre>
+<%= code_block <<CPP
+<template>
+  <head>
+    <include src="elements/task_line.hpp" require="::TaskLine" />
+    <attribute type="std::vector<std::string>" name="tasks" />
+  </head>
+  ...
+</template>
+CPP
+%>
+
+<p>
+  The &lt;include&gt; element can be used to include C++ headers in your html template. You can then
+  require a class defined in that header, which must be either a Custom Element or a View. The class
+  name will be mapped to an HTML tagName, allowing you to instantiate it in your view as such:
+</p>
+
+<pre class="filepath">views/todo_view.hpp</pre>
+<%= code_block <<CPP
+<template>
+  ...
+  <body>
+    ...
+    <div show.bind="tasks.size()">
+      <h2>Your <span text.bind="tasks.size()" /> tasks:</h2>
+      <!-- Here comes the repeater: -->
+      <div repeat.for="task of [std::vector<std::string>]tasks">
+        <task-line cpp::text.bind="task" />
+      </div>
+    </div>
+  </body>
+</template>
+CPP
+%>
+
+<p>
+  Notice the <code>cpp::text</code> attribute: this <code>cpp::</code> prefix tells the html
+  template to use a C++ setter, instead of a DOM attribute setter. In this case, the
+  <code>set_text</code> method we defined in <code>elements/task_line.hpp</code> will be called
+  with <code>task</code> as an attribute.
+</p>
+
+<h4>5.5.2 Define global custom elements</h4>
+
+<p>
+  Some custom elements will be used often in your application, and you might want to skip
+  the requiring step. You can use <code>config.json</code> to that end, by defining a global
+  custom element:
+</p>
+
+<pre class="filepath">config.json</pre>
+<%= code_block <<JSON
+{
+  "elements": [
+    {
+      "require": "TaskLine",
+      "include": "elements/task_line.hpp",
+      "tagName": "task-line"
+    }
+  ]
+}
+JSON
+%>
+
+<p>
+  With this change, the &lt;task-line&gt; element is now available in all your view templates,
+  without having to explicitely include those with an &lt;include&gt; element.
+</p>
+
+<div class="hint-box">
+  As views are also Custom Elements, you can also include those in other views and elements, and you
+  can also globally require them using <code>config.json</code>.
+</div>
+
+<h2>6. Models and Collections</h2>
+
+<p>
+  Comet also provides tools to help you represent your application data,
+  with classes allowing you to define Models and Collections. This Model
+  layer also comes with helpers making it easy to fetch or update data
+  with a remote server.
+</p>
+
+<h3>6.1 Defining a Model</h3>
+
+<p>
+  Let's define a model for our tasks. Since we'll use JSON to store our
+  models, we'll create a class that implements <code>Comet::JsonModel</code>:
+</p>
+
+<pre class="filepath">models/task.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include <comet/mvc/json_model.hpp>
+
+class TaskModel : public Comet::JsonModel<>
+{
+  std::string text;
+  bool done;
+public:
+  const std::string& get_text() const { return text; }
+  bool is_done() const { return done; }
+  void set_text(const std::string& value) { text = value; }
+  void set_done(bool value) { done = value; }
+
+  // We won't use the model URL, but each model
+  // implementation must provide this method:
+  std::string get_url() const override
+  {
+    return "tasks.json/" + std::to_string(get_id());
+  }
+
+  void from_json(Data json_data) override
+  {
+    id = json_data["id"].defaults_to<id_type>(0);
+    text = json_data["text"].as<std::string>();
+    done = json_data["done"].defaults_to<bool>(false);
+  }
+
+  std::string to_json() const override
+  {
+    DataTree json_data;
+
+    if (get_id() != 0)
+      json_data["id"] = get_id();
+    json_data["text"] = text;
+    json_data["done"] = done;
+    return json_data.to_json();
+  }
+};
+CPP
+%>
+
+<p>
+  When implementing <code>Comet::JsonModel</code>, we must provide at least the
+  three following methods:
+</p>
+
+<ul>
+  <li><code>get_url</code> which should return the remote path used to fetch and update a given resource.</li>
+  <li><code>from_json</code> which loads our Model from JSON data represented by a <code>Data</code> object.</li>
+  <li><code>to_json</code> which should render our Model as a JSON object.</li>
+</ul>
+
+<div class="hint-box">
+  The template parameter in <code>Comet::JsonModel</code> lets you define ID traits for your model. By
+  default, <code>Comet::LongIdTraits</code> is used, and model IDs are stored as <code>unsigned long</code>.
+  You can also use <code>Comet::StringIdTraits</code> if your models are identified by strings of characters.
+</div>
+
+<h3>6.2 Defining a Collection</h3>
+
+<p>
+  We will also create a <i>Collection</i>, which will help us interact with groups of Models:
+</p>
+
+<pre class="filepath">collections/task.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include <comet/mvc/json_collection.hpp>
+#include "models/task.hpp"
+
+class TaskCollection : public Comet::JsonCollection<TaskModel>
+{
+public:
+  std::string get_url() const override { return "tasks.json"; }
+  std::string resource_name() const override { return "tasks"; }
+};
+
+CPP
+%>
+
+<p>
+  Implementation of collections of any type require us to provide at least the two
+  following methods:
+</p>
+
+<ul>
+  <li><code>get_url</code> which is the URL used when calling <code>fetch</code> on a Collection.</li>
+  <li><code>resource_name</code> which can be used to specify the JSON key under which the collection's model list
+    will be defined in a JSON response from a remote server.</li>
+</ul>
+
+<h4>6.2.1 Resource names</h4>
+
+<p>
+  To better understand how resource names are used, here's what a JSON response is expected to look like when
+  the <code>resource_name</code> method returns "tasks":
+</p>
+
+<pre>
+{
+  "tasks": [ // &lt;- your resource name is used as a JSON key
+    {"id": 1, "text": "Drink water and stretch"},
+    {"id": 2, "text": "Stay on social media until dinner time" }
+  ]
+}
+</pre>
+
+<p>
+  Alternatively, <code>resource_name</code> may also return an empty string. In which case, the JSON response
+  is expected to look like this:
+</p>
+
+<pre>
+[
+  {"id": 1, "text": "Drink water and stretch"},
+  {"id": 2, "text": "Stay on social media until dinner time" }
+]
+</pre>
+<h3>6.3 Displaying collection</h3>
+
+<p>
+  When trying to display lists of models in your views, Collections come with a pretty
+  useful tool called <i>Subset</i>. It behaves as a container, and allows you to filter,
+  sort and paginate the content of a Collection.
+</p>
+
+<p>
+  Let's replace our <code>std::vector</code> with the <code>TaskCollection::Subset</code>
+  class:
+</p>
+
+<pre class="filepath">views/task_view.html</pre>
+<%= html_block <<HTML
+<template>
+  <head>
+    <include src="collections/task.hpp" />
+    <attribute type="TaskCollection::Subset" name="tasks" />
+    <script>
+    virtual void check(TaskModel&, Comet::Element checkbox) = 0;
+    virtual void add_task() = 0;
+    </script>
+  </head>
+  <body>
+    <div>
+      <input ref="add_input" type="text" placeholder="add task here" />
+      <button click.trigger="add_task()">Add</button>
+    </div>
+    <div show.bind="tasks.size()">
+      <h2>Your <span text.bind="tasks.size()" /> tasks:</h2>
+      <div repeat.for="task of [TaskCollection::Subset]tasks">
+        <input ref="checkbox" type="checkbox"
+               id.bind='"task_" + std::to_string(task->get_id())'
+               checked.bind="task->is_done()"
+               change.trigger="root->check(*task, checkbox)" />
+        <label text.bind="task->get_text()"
+               for.bind='checkbox.attr("id")'/>
+      </div>
+    </div>
+  </body>
+</template>
+HTML
+%>
+
+<div class="hint-box">
+  In our <i>Repeater</i>, when toggling the checkbox, we call <code>root-&gt;check</code>
+  instead of <code>this-&gt;check</code>. This is because repeaters don't share a common
+  scope with their containers. The <code>root</code> pointer is available everywhere in
+  a view template, and points to the view itself. When using nested repeaters, you can
+  also reach parent scopes by using the <code>parent</code> pointer.
+</div>
+
+<p>
+  In our new version of task_view.html, we've defined new virtual methods to handle
+  modifications on the models or collection.
+</p>
+
+<p>
+  We've also added a <code>checkbox</code> input to handle the <code>done</code>
+  property on our TaskModels.
+</p>
+
+<p>
+  Let's implement the <code>check_task</code >and <code>add_task</code> we just defined:
+</p>
+
+<pre class="filepath">views/todo_view.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include "templates/todo_view.hpp"
+
+class TodoView : public HtmlTemplate::TodoView
+{
+public:
+  void add_task() override
+  {
+    static unsigned long id = 4;
+    auto model = std::make_shared<TaskModel>();
+
+    model->set_id(id++);
+    model->set_text(add_input.value<std::string>());
+    tasks.add(model);
+    add_input.value("");
+  }
+
+  void check(TaskModel& task, Comet::Element checkbox)
+  {
+    if (task.is_done() != checkbox.get_checked())
+    {
+      task.set_done(checkbox.get_checked());
+      tasks.changed.trigger(task);
+    }
+  }
+};
+CPP
+%>
+
+<p>
+  The <code>add_task</code> method creates a new TaskModel using <code>make_shared</code> and
+  adds it to the Collection. Models added and retrieved from Collection are always
+  storedin a <code>shared_ptr</code>.
+</p>
+
+<p>
+  The <code>check_task</code> method updates the <code>done</code> attribute on a TaskModel,
+  before triggered the <code>changed</code> <i>signal</i> on the Collection. Signals are
+  C++ events that you can watch and react to: Collections provide multiple signals for
+  adding, removing, updating a model, as well as syncing the whole collection with a remote
+  server.
+</p>
+
+<h3>6.4 Fetching a Collection</h3>
+
+<p>
+  Starting here, we'll need a remote server to fetch our resources. We'll use the <i>http-server</i>
+  package from node's npm:
+</p>
+
+<pre>$ sudo npm install --global http-server</pre>
+
+<p>
+  The following file will serve as our database. Create it at the root of the todo project:
+<p>
+
+<pre class="filepath">tasks.json</pre>
+<pre>
+{
+  "tasks": [
+    { "id": 1, "text": "Just woke up", "done": true },
+    { "id": 2, "text": "Drink water and stretch" },
+    { "id": 3, "text": "Social media until dinner time", "done": true }
+  ]
+}
+</pre>
+
+<h4>6.4.1 Promises</h4>
+
+<p>
+  Collections are typically managed from a Controller. Declare a Collection property
+  in our TodoController class:
+</p>
+
+<pre class="filepath">controllers/todo.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include <comet/controller.hpp>
+#include "collections/task.hpp"
+
+class TodoController : public Comet::Controller
+{
+  TaskCollection collection;
+public:
+  TodoController(const Comet::Params&);
+
+  Comet::Promise initialize();
+  Comet::Promise finalize() { ... }
+
+  void index();
+};
+CPP
+%>
+
+<p>
+  We also removed the implementation for <code>initialize</code>, as we're going to
+  write a new implementation for it:
+</p>
+
+<pre class="filepath">controllers/todo.cpp</pre>
+<%= code_block <<CPP
+...
+
+Comet::Promise TodoController::initialize()
+{
+  return Comet::Promise::all({
+    Comet::Controller::initialize(),
+    collection.fetch()
+  });
+}
+CPP
+%>
+
+<p>
+  The <code>initialize</code> method is used by Comet to sets things up before executing
+  an action method. It relies on <code>Comet::Promise</code>, which is a wrapper around
+  JavaScript promises: this allows you to use <code>Comet::Promise::all</code> to combine
+  the requirements from multiple initializers.
+</p>
+
+<p>
+  In this example, the combined requirement are to complete the initializer from
+  <code>Comet::Controller</code>, and fetching our TaskCollection using <code>collection.fetch</code>.
+</p>
+
+<p>
+  Now that our collection is prepped an fetched, we just need to use it to set the <code>tasks</code>
+  attribute on our TodoView:
+</p>
+
+<pre class="filepath">controllers/todo.cpp</pre>
+<%= code_block <<CPP
+...
+
+void TodoController::index()
+{
+  auto view = use_layout<ApplicationLayout>()
+                .render<TodoView>();
+
+  view->set_tasks(collection.subset());
+  view->trigger_binding_updates();
+}
+CPP
+%>
+
+<p>
+  Check out the result by compiling your project and starting our web server:
+</p>
+
+<pre>$ comet build
+$ npx http-server</pre>
+
+<p>
+  Once ready, go to <a href="http://localhost:8080/#/todo" target="_blank">http://localhost:8080/#/todo</a>
+  too see your application load:
+</p>
+
+<img src="/images/comet/getting-started/task-promises.jpg" />
+
+<p>
+  You might notice that nothing happen when clicking thet ask add button: indeed, our
+  application doesn't handle updates of our Collection object... yet. We'll see how
+  to do that in the next chapter.
+</p>
+
+<h4>6.4.2 Signals</h4>
+
+<p>
+  We've just seen a pretty simple way to handle fetching remote data before loading a view...
+  but what if we want our view to refresh as data gets updated or fetched ?
+</p>
+
+<p>
+  This is where Comet's <i>Signals</i> and <i>Listeners</i> enter the scene.
+</p>
+
+<p>
+  The Collection provide <i>Signals</i>, and our TodoView will listen to those
+  signals, so the first step we have to take is to add the <code>Comet::Listener</code>
+  component on our view:
+</p>
+
+<pre class="filepath">views/todo_view.hpp</pre>
+<%= code_block <<CPP
+class TodoView : public HtmlTemplate::TodoView, public Comet::Listener
+{
+  ...
+};
+CPP
+%>
+
+<p>
+  The <code>Comet::Listener</code> component is used to connect and
+  disconnect lambdas to a <code>Signal</code> object, by adding
+  methods such as <code>listen_to</code> and <code>stop_listening</code>.
+</p>
+
+<p>
+  Let's use the <code>listen_to</code> method to react to our Collection events:
+</p>
+
+<pre class="filepath">controllers/todo.cpp</pre>
+<%= code_block <<CPP
+...
+
+void TodoController::index()
+{
+  ...
+  view->set_tasks(collection.subset());
+
+  // Add event listeners which will trigger binding updates
+  // when models are changed, added or fetched:
+  view->listen_to(collection.changed,
+    [view](TaskModel&) { view->trigger_binding_updates(); }
+  );
+
+  view->listen_to(collection.added,
+    [view](TaskModel&) { view->trigger_binding_updates(); }
+  );
+
+  view->listen_to(collection.synced,
+    std::bind(&TodoView::trigger_binding_updates, view.get())
+  );
+
+  // Since our view handle the `synced` event, we can fetch
+  // the models after rendering the view, rather than in the
+  // controller's initializer:
+  collection.fetch();
+}
+
+// The collection is now fetched in the index method, and the
+// view is updated using signals: we don't need to use Promises
+// anymore, so we can rewrite the initialize method as such:
+Comet::Promise TodoController::initialize()
+{
+  return Comet::Controller::initialize();
+}
+CPP
+%>
+
+<p>
+  We're good to go: build the application, launch the web-server, and go to
+  <a href="http://localhost:8080/#/todo" target="_blank">http://localhost:8080/#/todo</a>.
+</p>
+
+<h2>7. What's next ?</h2>
+
+<p>
+  Now that you've seen your first Comet application, you should feel free to update it
+  and experiment on your own.
+</p>
+
+<p>
+  Here are some tutorials you might be interested in to further dive into Comet:
+</p>
+
+<ul>
+  <!--
+  <li>
+    <a href="/comet/tutorials/triforce">Using the tri-force: Crails, Comet and MetaRecord</a>
+  </li>
+  -->
+</ul>

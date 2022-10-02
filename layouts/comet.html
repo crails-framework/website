@@ -1,0 +1,36 @@
+<!DOCTYPE HTML>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Crails Framework - <%= @item[:title] %></title>
+    <link rel="stylesheet" href="/css/application.css">
+    <link rel="stylesheet" href="/css/code-qtcreator.css">
+    <script src="/highlight.pack.js"></script>
+    <script src="/js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc <%= Nanoc::VERSION %>">
+  </head>
+  <body class="comet-style">
+    <div id="header">
+      <img class="logo" src="/images/logo.png" />
+      <h1>Comet.cpp</h1>
+      <ul class="main-menu">
+        <li><a href="/comet">Home</a></li><li>
+            <a href="/comet/getting-started">Getting started</a></li><li>
+            <a href="/comet/tutorials">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/comet.cpp" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <%= yield %>
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br/>
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  </body>
+</html>
+

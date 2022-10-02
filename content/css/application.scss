@@ -55,6 +55,13 @@ p {
 
 #main {
   display: inline-block;
+  img {
+    border: 1px lightgray solid;
+  }
+}
+
+#main li {
+  padding: 5px;
 }
 
 .tutorial-list li {
