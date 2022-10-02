@@ -19,11 +19,15 @@ The View layer is composed of "templates" that are responsible for providing app
 ## Framework and modules
 Crails comes with a small variety of modules providing features commonly needed in web-applications.
 
-* **crails-sidekic** adds a service for simple _background task processing_
-* **crails-cache** allows you to _cache_ your controller responses using memcached
+* **crails-assets** flags, compiles, minimizes and compresses your assets
+* **crails-deploy** deploys your application as a service on a remote server
 * **crails-mail** includes a mail client to generate and send _raw or html emails_
-* **crails-image** brings features to handles _image storage and thumbnail generation_
+* **crails-sync** provides tools for server/client real-time messaging
+* **crails-sidekix** adds a service for simple _background task processing_
+* **crails-tests** and **crails-selenium** help you implement unit and feature tests
 * **crails-sentry** handles server _errors monitoring_ through [Sentry](http://sentry.io/)
+
+And many more modules, bringing support for user management, OAuth, xmlrpc, proxy, etc.
 
 ### Code generation
 Crails provides several code-generating tools, most notably with **MetaRecord** which provides a simple DSL for describing models:
