@@ -39,6 +39,18 @@ body {
       #header .main-menu li:hover {
         background-color: #fff956; }
 
+.comet-style #header {
+  background: black;
+  background: linear-gradient(138deg, black 0%, #323232 8%, #969696 35%, black 100%);
+  border-bottom: 2px black solid; }
+  .comet-style #header h1 {
+    color: white; }
+  .comet-style #header li > a {
+    color: white;
+    border-left: 2px black solid; }
+    .comet-style #header li > a:hover {
+      background-color: black; }
+
 html {
   height: 100%; }
 
@@ -147,6 +159,11 @@ p {
 
 #main {
   display: inline-block; }
+  #main img {
+    border: 1px lightgray solid; }
+
+#main li {
+  padding: 5px; }
 
 .tutorial-list li {
   margin-bottom: 5px; }

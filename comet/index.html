@@ -1,0 +1,98 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Comet.cpp</title>
+    <link rel="stylesheet" href="../css/application.css">
+    <link rel="stylesheet" href="../css/code-qtcreator.css">
+    <script src="../highlight.pack.js"></script>
+    <script src="../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.7">
+  </head>
+  <body class="comet-style">
+    <div id="header">
+      <img class="logo" src="../images/logo.png">
+      <h1>Comet.cpp</h1>
+      <ul class="main-menu">
+        <li><a href=".">Home</a></li><li>
+            <a href="getting-started">Getting started</a></li><li>
+            <a href="tutorials">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/comet.cpp" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <h2 id="whats-cometcpp">What’s Comet.cpp</h2>
+<p>Comet.cpp is a C++ web-application framework for the frontend. It relies on <a href="">Cheerp</a>, a C++ to JavaScript
+transpiler, and provides a minimalist wrapper API for managing DOM elements and events, as well as an <a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller">Model-View-Controller (MVC)</a> framework and scaffolding tools.</p>
+
+<h3 id="model">Model</h3>
+<p>Collection and model templates are provided to help you fetch, parse and submit your application resources.</p>
+
+<h3 id="view">View</h3>
+<p>Comet.cpp provides tools to write html templates that can be later rendered in your application. These
+templates provide custom HTML semantics such as <a href="">slots</a>, repeaters or event handlers:</p>
+
+<pre><code>&lt;template&gt;
+  &lt;head&gt;
+    &lt;script&gt;
+      virtual void on_clicked()
+      {
+        text_display.text("Hello world !");
+      }
+    &lt;/script&gt;
+  &lt;/head&gt;
+  &lt;body tag-name="div"&gt;
+    &lt;div ref="text_display" /&gt;
+    &lt;button click.trigger="on_clicked()"&gt;
+      Click here !
+    &lt;/button&gt;
+  &lt;/body&gt;
+&lt;/template&gt;
+</code></pre>
+
+<p>You can extend an HTML template to implement interface logic in C++, respectfing <em>separation of concerns</em>.</p>
+
+<h3 id="controller">Controller</h3>
+<p>Serving as glue between the models and the views, the controller layer allows you to react
+to changes in the window’s current location.</p>
+
+<pre><code>// a controller header
+#pragma once
+#include &lt;comet/mvc/controller.hpp&gt;
+class Controller : public Comet::Controller
+{
+public:
+  Controller(const Comet::Params&amp; params) : Comet::Controller(params)
+  {}
+
+  void index();
+};
+
+// a router:
+#include &lt;comet/router.hpp&gt;
+void Comet::Router::initialize()
+{
+  match("/?", Controller, index);
+  match("/resource/:resource_id", ResourceController, show);
+}
+</code></pre>
+
+<h1 id="getting-started">Getting started</h1>
+
+<ul>
+  <li><a href="getting-started">Getting Started with Comet</a></li>
+  <li><a href="tutorials">Comet Guides</a></li>
+  <li>The API Documentation</li>
+</ul>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+
+</body></html>
