@@ -1,0 +1,363 @@
+---
+title: Packaging and Deploying your Applications
+---
+
+<div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  In the following tutorial, we'll learn how to use the packaging and deployment tools that can help you
+  deploy your application on a production server.
+</p>
+
+<p>
+  Deploying your web application on a remote server is a crucial part
+</p>
+
+<h2>2. Packaging your web application</h2>
+
+<h3>2.1 What's an application package ?</h3>
+<p>
+  What we call <i>package</i> is a single compressed file containing everything needed to run your application.
+  Packages are <i>platform dependent</i>: if you build your package on Linux, you'll get a package that can
+  only be deployed on other Linux systems.
+</p>
+
+<p>
+  Crails application packages consist of five elements:
+</p>
+
+<ul>
+  <li>
+    <i>Binaries</i> which, when executed, launch your server or its tasks.
+  </li>
+  <li>
+    <i>Libraries</i> collected from the packaging environment, and including the libraries 
+    that each of your binary rely on.
+  </li>
+  <li>
+    <i>Service file</i> depending on the target (systemctl for Linux, rc file for FreeBSD),
+    used to start and stop your web application.
+  </li>
+  <li>
+    <i>Static files</i> including the <code>public</code> folder from your project</i>
+  </li>
+  <li>
+    <i>Runtime directory</i> which is the only element which should have both read and write access.
+    This is where your processes will run.
+  </li>
+</ul>
+
+<h3>2.2 Package command</h3>
+
+<p>
+  The Crails Command Line Interface comes with a tool to package your application in a single step:
+</p>
+
+<pre>$ crails package</pre>
+
+<p>
+  What this command does is, it first builds your application (like <code>crails build</code>), then
+  creates a compressed archive (by default: <code>application.tar.gz</code>) which we call a <i>package</i>.
+</p>
+
+<p>
+  The package command has several option, the first of which being:
+</p>
+
+<pre>$ crails package --mode Release</pre>
+
+<p>
+  This is what you want to do when you're about to deploy a package meant for a production environment. The
+  <code>Release</code> build will be safer and lighter.
+</p>
+
+<div class="hint-box">
+  You can check out other options for the <code>package</code> command by running <code>$ crails package -h</code>.
+</div>
+
+<h3>2.3 User settings</h3>
+
+<p>
+  Your <i>service file</i> can be configured to run your application as a specific user:
+</p>
+
+<pre>$ crails package --mode Release --install-user webapp</pre>
+
+<p>
+  Similarly, to set a specific user group:
+</p>
+
+<pre>$ crails package --mode Release --install-user webapp --install-group www</pre>
+
+<p>
+  These settings are important when deploying your application on production environments, as you probably
+  don't want your processes to run with the administrator user permissions.
+</p>
+
+<h2>3. Deploying your web application</h2>
+
+<p>
+  We know how to package our application, and that's great ! But the purpose of a package is to be
+  deployed, so let's see how to do that !
+</p>
+
+<p>
+  First things first, deployments are performed through <code>ssh</code>, so make sure you've got it
+  installed on your system.
+</p>
+
+<h3>3.1 Manual deployment</h3>
+
+<p>
+  Deploying a crails package is pretty simple. The first step is to send the package to your server,
+  which can be done using <code>scp</code>:
+</p>
+
+<pre>$ scp application.tar.gz user@127.0.0.1:/tmp/application.tar.gz
+$ ssh user@127.0.0.1</pre>
+
+<p>
+  Where <code>127.0.0.1</code> is the IP of the server you're trying to reach, and <code>user</code>
+  the name of the user with which you want to use to connect to that server.
+</p>
+
+<p>
+  Now that we're connected, we need to get root access, which can typically be done through:
+</p>
+
+<pre>$ sudo su</pre>
+
+<p>
+  Then, we extract our archive at the root of the machine:
+</p>
+
+<pre>$ cd /
+$ tar xf /tmp/application.tar.gz</pre>
+
+<p>
+  And voilà ! You may now start your application with one of the following command (depending on your system):
+</p>
+
+<pre>$ systemctl start application_name # Linux
+$ service application_name start # FreeBSD</pre>
+
+<p>
+  Where <i>application_name</i> is the name you've given to your application when creating it with the
+  <code>crails new</code> command (which you can customize by changing the <code>name</code> variable in
+  the <code>.crails</code> file at the root of your project).
+</p>
+
+<h3>3.2 Using the deploy command</h3>
+
+<p>
+  If you have direct ssh access to your machine, then you can make your life simpler by just using the
+  <i>deploy</i> command, such as:
+</p>
+
+<pre>$ crails deploy --hostname 127.0.0.1 --deploy-user user --sudo --pubkey --user webapp --group www</pre>
+
+<p>
+  Wow, that was a lot of options ! Let's go over what those do:
+</p>
+
+<ul>
+  <li><code>--hostname</code> takes the hostname or IP address of the server you want to deploy to</li>
+  <li><code>--deploy-user</code> is the user <code>ssh</code> will use to connect to the server</li>
+  <li><code>--sudo</code> is used when the deploy-user will need to use the <code>sudo</code> command to extract the package or configure the service. This is usually the case.</li>
+  <li><code>--pubkey</code> means <code>ssh</code> will authentify using your RSA public key. The deploy command also has option for password connection, but we recommend using an RSA key.</li>
+  <li><code>--user</code> and <code>--group</code> are the name of the user and groups which will be running the web application on the remote server.</li>
+</ul>
+
+<p>
+  The deploy command will first package your application, then deploy it. So once you are done
+  developping, you're always just one command away to send your application live.
+</p>
+
+<p>
+  Note that if the user and group specified in your options don't already exist on your production environment,
+  they will be created by the deploy command.
+</p>
+
+<div class="hint-box">
+  The deploy command requies the <code>libssh</code> development files to be available on your system to build,
+  so if you didn't have it prepped when you last installed crails, the deploy command won't be available.
+</div>
+
+<h3>3.3 FreeBSD jails</h3>
+
+<p>
+  If you're using a FreeBSD server, you may want to deploy your application in a <a href="https://docs.freebsd.org/en/books/handbook/jails/" target="_blank">jail</a>. That's a great idea ! And good for you, the <code>deploy</code> command can help you with that !
+</p>
+
+<p>
+  Once you've created a jail, just use the <code>--jail-path</code> option to deploy to a jail:
+</p>
+
+<pre>$ crails deploy \
+  --hostname 127.0.0.1 \
+  --deploy-user user \
+  --sudo --pubkey \
+  --jailpath /var/jails/webapp</pre>
+
+<p>
+  When using jails, the <code>--user</code> and <code>--group</code> options will be relative to the jail,
+  and only the <i>service file</i> will be deployed outside of the jail.
+</p>
+
+<h3>3.4 Deploying pre-built packages</h4>
+
+<p>
+  The methods we've seen before are all-in-one: they build, package and deploy your application all at once.
+  What if you already have a packaged application at hand, and just want to deploy that package ?
+</p>
+
+<p>
+  In this case, we don't use the <code>crails</code> command anymore, and switch to <code>crails-deploy</code>:
+</p>
+
+<pre>$ crails-deploy \
+  --package my_package.tar.gz \
+  --hostname 127.0.0.1 \
+  --sudo --pubkey</pre>
+
+<p>
+  The option are the same as the ones for <code>crails deploy</code>, except you must specify a <code>--package</code>
+  option pointing to the archive you wish to deploy.
+</p>
+
+<div class="hint-box">When in doubt, use <code>crails-deploy --help</code> to list the available options</div>
+
+<h2>4. Packaging with Docker</h2>
+
+<p>
+  It is best to ensure your packaging environment is the same as your production environment: it's a good way to
+  avoid the linking issues that could happen in cases where a system library (such as the C++ standard library,
+  or the openssl library) is provided by your production environment in a different version than on your
+  packaging environment.
+</p>
+
+<p>
+  With Linux, this result is pretty simple to achieve, using <i>Docker</i> to locally replicate your
+  production environment.
+</p>
+
+<p>
+  Which is why Crails comes with a set of tools to help you package your application using docker. Let's
+  take a look ! Firstly, make sure that the <a href="https://docs.docker.com/engine/install/" target="_blank">docker service is installed and running on your machine</a>.
+</p>
+
+<p>
+  Then, go to the diretory of one of your crails project, and install the docker plugin:
+</p>
+
+<pre>$ crails plugins docker install</pre>
+
+<p>
+  This will set you up by creating the following files:
+</p>
+
+<table>
+  <tr>
+    <th>File/Folder</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>docker/</td>
+    <td>Where your docker machine are run and configured.</td>
+  </tr>
+  <tr>
+    <td>docker/base/Dockerfile</td>
+    <td>Docker configuration using the <code>debian:sid</code> image.</td>
+  </tr>
+  <tr>
+    <td>docker/base/build-build2.sh</td>
+    <td>Build2 is the build manager for crails. This scripts will install build2 on your docker machine.</td>
+  </tr>
+  <tr>
+    <td>docker/base/build-crails.sh</td>
+    <td>This script will build the crails framework libraries used by your application.</td>
+  </tr>
+  <tr>
+    <td>docker/base/build-environment.sh</td>
+    <td>This customizable file sets some build options used by the build-crails.sh script.</td>
+  </tr>
+  <tr>
+    <td>docker/base/build-odb-compiler.sh</td>
+    <td>Optional: present when you're using the odb plugin.
+  </tr>
+  <tr>
+    <td>docker/base/build-comet.sh</td>
+    <td>Optional: present when you're using the comet plugin.
+  </tr>
+</table>
+
+<p>
+  The <i>base</i> configuration is meant as an example: we can't really guesstimate what your own production
+  environment will look like, so it should serve as a template for the configurations you will create for
+  your servers.
+</p>
+
+<h3>4.1 Machine creation</h3>
+<p>
+  Speaking of which, now that the docker plugin is installed, you can scaffold new docker machine configurations
+  with the following command:
+</p>
+
+<pre>
+$ crails plugins docker new --name my_machine --image ubuntu:22.04
+</pre>
+
+<p>
+  Your new machine configuration will be created in <code>docker/my_machine</code>.
+</p>
+
+<h3>4.2 Running a machine</h3>
+
+<p>
+  While you should be perfectly able to build and run those docker machines, the Crails CLI
+  comes with a bunch of tool to do it for you.
+</p>
+
+<h4>4.2.1 Opening a shell</h4>
+
+<p>
+  This is pretty useful for debugging and tinkering around: the shell command allows you to
+  launch your docker machine, and opens a shell to interact with its contents:
+</p>
+
+<pre>$ crails plugins docker shell --dockerfile my_machine</pre>
+
+<p>
+  If it hasn't already been done, this command will need to build the docker machine first. That
+  might take a while, so be patient ! You can also use the <code>-v</code> option to see the output
+  of docker as it builds the machine.
+</p>
+
+<h4>4.2.2 Running your application</h4>
+
+<p>
+  For some reasons that are your own, you might prefer to run your application from a docker machine
+  rather than directly from your own system. There's a command for that:
+</p>
+
+<pre>$ crails plugins docker run --dockerfile my_machine --port 3001</pre>
+
+<h4>4.2.3 Packaging your application</h4>
+
+<p>
+  Lastly, the main purpose of the docker plugin: packaging your application for your target environment.
+</p>
+
+<p>
+  You can use the following command to create a package from a specific docker machine:
+</p>
+
+<pre>$ crails plugins docker package \
+  --dockerfile my_machine \
+  --output my_machine.tar.gz</pre>
+
+<p>
+  The options of the <code>crails package</code> command are all also available with this comannd.
+</p>
