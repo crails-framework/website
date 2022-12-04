@@ -1,0 +1,361 @@
+---
+title: Testing your Application
+---
+
+<div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  Testing is an important part of your applications, so Crails comes with
+  tools to help you run all sorts of tests.
+</p>
+
+<h2>2. Writing tests</h2>
+
+<h3>2.1 Adding a new test</h3>
+
+<p>
+  The crails CLI tool comes with a scaffold for tests. Run the following command:
+</p>
+
+<pre>$ crails scaffold test --name MySpec</pre>
+
+<p>
+  This will generate a new <code>MySpec</code> class. Open up the source file:
+</p>
+
+<pre class="filepath">spec/my_spec.cpp</pre>
+<%= code_block <<CPP
+#include "my_spec.hpp"
+
+MySpec::MySpec()
+{
+  before(std::bind(&MySpec::before_all, this));
+  after(std::bind(&MySpec::after_all, this));
+
+  describe("name of a method", [this]()
+  {
+    it("fails", [this]()
+    {
+      EXPECT(1, ==, 2);
+    });
+  });
+}
+
+void MySpec::before_all()
+{
+}
+
+void MySpec::after_all()
+{
+}
+CPP
+%>
+
+<p>
+  Tests are reparted in categories defined with the <code>describe</code> method. Then,
+  each test unit is defined using the <code>it</code> method, typically followed with
+  a short sentence describing the expectation of the test, such as:
+  <code>it("should succeed", callback)</code>.
+</p>
+
+<p>
+  The <code>EXPECT</code> macro is used to define the success conditions of a test. A test
+  may contain any number of call to <code>EXPECT</code>, or none at all: another way to fail
+  a test can be to throw an exception.
+</p>
+
+<p>
+  Next step. we need to register the test in the runner:
+</p>
+
+<pre class="filepath">spec/spec.cpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/runner.hpp>
+#include "my_spec.hpp"
+
+using namespace std;
+
+void Crails::Tests::Runner::setup()
+{
+  helpers.push_back(make_shared<MySpec>());
+}
+
+void Crails::Tests::Runner::shutdown()
+{
+}
+CPP
+%>
+
+<p>
+  Our test is ready to fail with success. Run the following command:
+</p>
+
+<pre>$ crails build
+$ build/tests</pre>
+
+<h3>2.2 Request tests</h3>
+
+<p>
+  Crails provide a simple way to write request tests, in which you simulate
+  an HTTP query and analyze its response. Let's update our previous test to
+  run a test request:
+</p>
+
+<pre class="filepath">spec/my_spec.hpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/helper.hpp>
+#include <crails/tests/request.hpp>
+
+class MySpec : public Crails::Tests::Helper
+{
+  MySpec()
+  {
+    using namespace Crails;
+    describe("index", []()
+    {
+      it("lists items", []()
+      {
+        Tests::Request request(HttpVerb::get, "/route");
+
+        request.run();
+        EXPECT_STATUS(request, HttpStatus::not_found); 
+      });
+    });
+  }
+};
+CPP
+%>
+
+<p>
+  If you run the test right now, you'll see an exception thrown, warning you
+  that the <code>Router</code> is not initialized. The router needs to be
+  initialized and finalized as the test suite runs and stops:
+</p>
+
+<pre class="filepath">spec/spec.cpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/runner.hpp>
+#include <crails/router.hpp>
+#include "my_spec.hpp"
+
+using namespace std;
+
+void Crails::Tests::Runner::setup()
+{
+  Crails::Router::singleton::initialize();
+  Crails::Router::singleton::get()->initialize();
+  helpers.push_back(make_shared<MySpec>());
+}
+
+void Crails::Tests::Runner::shutdown()
+{
+  Crails::Router::singleton::finalize();
+}
+CPP
+%>
+
+<p>
+  Our test should now pass: build and run the test suite:
+</p>
+
+<pre>$ crails build
+$ build/tests</pre>
+
+<h3>2.3 Test preparation</h3>
+
+<p>
+  You might want to run code before and after each tests. The <code>after</code> and <code>before</code>
+  methods cam help you define such behaviors for each test group:
+</p>
+
+<pre class="filepath">spec/my_spec.hpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/helper.hpp>
+#include <crails/tests/request.hpp>
+
+class MySpec : public Crails::Tests::Helper
+{
+  MySpec()
+  {
+    using namespace Crails;
+    before([this]()
+    {
+      std::cout << "before each tests" << std::endl;
+    });
+
+    after([this]()
+    {
+      std::cout << "after each tests" << std::endl;
+    });
+
+    describe("index", [this]()
+    {
+      before([this]()
+      {
+        std::cout << "before each index tests" << std::endl;
+      });
+
+      after([this]()
+      {
+        std::cout << "after each index tests" << std::endl;
+      });
+
+      it("lists items", [this]()
+      {
+        Tests::Request request(HttpVerb::get, "/route");
+
+        request.run();
+        EXPECT_STATUS(request, HttpStatus::not_found); 
+      });
+    });
+  }
+};
+CPP
+%>
+
+<h2>3. End-to-end testing</h2>
+
+<p>
+  You may want to go deeper, and write tests that inspect the
+  web pages rendered by your application. To perform end-to-end
+  testing, we use the <code>libcrails-selenium</code> module.
+</p>
+
+<p>
+  Install the selenium plugin with the following command:
+</p>
+
+<pre>$ crails plugin selenium install</pre>
+
+<p>
+  This command will download the selenium driver, and include
+  new helpers for your tests.
+</p>
+
+<h3>3.1 Configure a background server</h3>
+
+<p>
+  For end-to-end testing to work, we need a server to run in the
+  background, available for our headless browser to interact with it.
+</p>
+
+<p>
+  Update the <code>spec.cpp</code> file to use the <code>Crails::Tests::BackgroundServer</code> singleton:
+</p>
+
+<pre class="filepath">spec/spec.cpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/runner.hpp>
+#include "my_spec.hpp"
+#include <crails/tests/background_server.hpp>
+
+using namespace std;
+
+void Crails::Tests::Runner::setup()
+{
+  Crails::Tests::BackgroundServer::initialize();
+  helpers.push_back(make_shared<MySpec>());
+}
+
+void Crails::Tests::Runner::shutdown()
+{
+  Crails::Tests::BackgroundServer::finalize();
+}
+CPP
+%>
+
+<h3>3.2 Writing an end-to-end test</h3>
+
+<p>
+  End-to-end test helpers should inherit from <code>Crails::Tests::SeleniumHelper</code>. A browser will
+  be launched each time such a helper is triggered, and you will have access to new methods within the
+  helper to interact with the browser. Before we take a look at that, update our spec header to include
+  <code>Crails::Tests::SeleniumHelper</code>:
+</p>
+
+<pre class="filepath">spec/my_spec.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include <crails/tests/helper.hpp>
+#include <crails/tests/selenium_helper.hpp>
+
+class MySpec : public Crails::Tests::SeleniumHelper
+{
+public:
+  MySpec();
+
+private:
+  void before_all();
+  void after_all();
+};
+CPP
+%>
+
+<p>
+  We're now ready to update our test so that it tests a page in the browser:
+</p>
+
+<pre class="filepath">spec/my_spec.cpp</pre>
+<%= code_block <<CPP
+#include "my_spec.hpp"
+
+MySpec::MySpec()
+{
+  before(std::bind(&MySpec::before_all, this));
+  after(std::bind(&MySpec::after_all, this));
+
+  describe("name of a method", [this]()
+  {
+    it("fails", [this]()
+    {
+      page->visit("/");
+      page->expect()
+        .to_have_element("body > h1")
+        .with_content("Welcome to your new Crails Application");
+    });
+  });
+}
+
+void MySpec::before_all()
+{
+}
+
+void MySpec::after_all()
+{
+}
+CPP
+%>
+
+<p>
+  As you can see on this example, you have no access to a <code>page</code> property, which allows you to
+  interact with the test browser loaded by Selenium. We use the <code>page-&gt;visit</code> method to
+  load a given URI to the browser.
+</p>
+
+<p>
+  The <code>page</code> controller also gives you access to a new expectation system. You can still use
+  the <code>EXPECT</code> macro, but selenium based expectation will allow you to navigate within the DOM
+  of your generated page, check for the presence of elements, their contents, and such.
+</p>
+
+<h3>3.3 Interacting with page elements</h3>
+
+<p>
+  The <code>libcrails-selenium</code> plugin leverages the <a href="https://github.com/crails-framework/webdriverxx" target="_blank">webdriverxx</a>
+  library: its README will tell you all you need to know about it.
+</p>
+
+<p>
+  To setup your test, you'll need to interact with page elements. You can get a handle on elements
+  using the <code>page-&gt;find</code> method, using a selector string:
+</p>
+
+<%= code_block <<CPP
+webdriverxx::Element element = page->find("input[type=\\"text\\"]");
+
+element.SendKeys("Hello, world !");
+page->find("input[type\\"submit\\"]").Click();
+CPP
+%>
