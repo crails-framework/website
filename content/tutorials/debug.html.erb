@@ -1,0 +1,153 @@
+---
+title: Debugging
+---
+
+<div id="with-index"></div>
+
+<h2>1. The Logger</h2>
+
+<p>
+  It can be useful to save information to log files at runtime. Crails can help you display debugging
+  information and save the logging history in files.
+</p>
+
+<h3>1.1 What is the Logger ?</h3>
+
+<p>
+  Crails provides its own logger, designed to record logging information in a thread-safe fashion,
+  providing useful information alongsides the logs, such as <i>process id, thread id</i> and <i>timestamp</i>.
+</p>
+
+<p>
+  The logger also implements a <a href="https://en.wikipedia.org/wiki/Log_rotation" target="_blank">log rotation mechanism</a>, particularly useful in production environments.
+</p>
+
+<div class="hint-box">
+  The logger is mainly designed for speed, and lines may not always be rendered in chronological order when multiple
+  threads are concurrently using the logger.
+</div>
+
+<h3>1.2 Log Levels</h3>
+
+<p>
+When something is logged, it's printed into the corresponding log if the log level of the message is equal to or higher than the configured log level. If you want to know the current log level, you can use the <code>Logger::log_level</code> global variable.
+</p>
+
+<p>
+  The available log levels are: <code>Debug</code>, <code>Info</code>, <code>Warning</code>, <code>Error</code>, corresponding to the log level numbers from 0 up to 4, respectively. To change the default log level, update the logger configuration file:
+</p>
+
+<code class="filepath">config/logger.cpp</code>
+<%= code_block <<CPP
+#include <crails/logger.hpp>
+
+using namespace Crails;
+
+const Logger::Symbol Logger::log_level = Debug;
+//const Logger::Symbol Logger::log_level = Info;
+CPP
+%>
+
+<div class="hint-box">
+  By default, logs are all written on <code>stderr</code>, except for the <code>Info</code> level logs which
+  are written on <code>stdout</code>.
+</div>
+
+<h3>1.3 Sending messages</h3>
+
+<p>
+  To write in the log from anywhere within your application, use <code>Crails::logger</code>, such as:
+</p>
+
+<%= code_block <<CPP
+using namespace Crails;
+logger << Logger::Info << "Processing a request" << Logger::endl;
+logger << Logger::Error << "Something unexpected has happened" << Logger::endl;
+CPP
+%>
+
+<h3>1.3 Logging to files</h3>
+
+<p>
+  By default, the logger outputs the log to the standard and error output (<code>stdout</code> and <code>stderr</code>). But you can have it write the logs to files instead, by launching your server with the following options:
+</p>
+
+<pre>build/server --log logs/info</pre>
+
+<p>
+  This will redirect all your logs to the <code>logs/info</code> file. If a file with the same name already exists,
+  it will be renamed to <code>logs/info.1</code>, up until <code>logs/info.10</code>. Logs start rotating after
+  10 files have been stored.
+</p>
+
+<p>
+  You may also split info and error logs to different files by adding the following option:
+</p>
+
+<pre>build/server --log logs/info --errors logs/errors</pre>
+
+<h3>1.4 Impact of logs on performance</h3>
+
+<p>
+Logging will always have a small impact on the performance of your Crails app, particularly when logging to disk. Additionally, there are a few subtleties:
+</p>
+
+<p>
+Using the <code>Debug</code> level will have a greater performance penalty than <code>Error</code>, as a far greater number of strings are being evaluated and written to the log output (e.g. disk).
+<p>
+
+<p>
+Another potential pitfall is too many calls to Logger in your code:
+</p>
+
+<%= code_block <<CPP
+logger << Logger::Debug << "New person model: " << model.to_json() << Logger::endl;
+CPP
+%>
+
+<p>
+In the above example, there will be a performance impact even if the allowed output level doesn't include debug. The reason is that the values are still being passed to the logger, meaning <code>model.to_json()</code> will run, even if nothing gets printed as a result.
+</p>
+
+<p>
+Therefore, it's recommended to pass lambdas to the logger methods, as these are only evaluated if the output level is the same as — or included in — the allowed level (i.e. lazy loading). The same code rewritten would be:
+</p>
+
+<%= code_block <<CPP
+logger << Logger::Debug << [&]() { return "New person model: " + model.to_json(); } << Logger::endl;
+CPP
+%>
+
+<p>
+  The contents of the block, and therefore the string interpolation, are only evaluated if debug is enabled. This performance savings are only really noticeable with large amounts of logging, but it's a good practice to employ.
+</p>
+
+<div class="hint-box">
+  This section was originally written by <a href="https://stackoverflow.com/questions/16546730/logging-in-rails-is-there-any-performance-hit/16546935#16546935" target="_blank">Jon Cairns at a StackOverflow answer</a> and it is licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank">cc by-sa 4.0</a>.
+</div>
+
+<h2>2. Debugging using GDB</h2>
+
+<p>
+  There are many GDB tutorials out there. Pick one !
+</p>
+
+<h2>3. Debugging Memory Leaks</h2>
+
+<p>
+  Any application may leak memory. In this section, you will learn how to find and fix such leaks by using tools such as Valgrind.
+</p>
+
+<h3>3.1 Valgrind</h3>
+
+<p>
+  <a href="http://valgrind.org/" target="_blank">Valgrind</a> is an application for detecting C-based memory leaks and race conditions.
+</p>
+
+<p>
+  There are Valgrind tools that can automatically detect many memory management and threading bugs, and profile your programs in detail. It will for instance give you a report of the memory that your application has leaked while it was running, alongside with precise details to help you find where such memory was allocated.
+</p>
+
+<p>
+  For further information on how to use Valgrind, refer to <a href="https://valgrind.org/docs/manual/quick-start.html" target="_blank">Valgrind's Quick Start Guide</a>.
+</p>

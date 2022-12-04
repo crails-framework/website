@@ -77,25 +77,6 @@ title: Packaging and Deploying your Applications
   You can check out other options for the <code>package</code> command by running <code>$ crails package -h</code>.
 </div>
 
-<h3>2.3 User settings</h3>
-
-<p>
-  Your <i>service file</i> can be configured to run your application as a specific user:
-</p>
-
-<pre>$ crails package --mode Release --install-user webapp</pre>
-
-<p>
-  Similarly, to set a specific user group:
-</p>
-
-<pre>$ crails package --mode Release --install-user webapp --install-group www</pre>
-
-<p>
-  These settings are important when deploying your application on production environments, as you probably
-  don't want your processes to run with the administrator user permissions.
-</p>
-
 <h2>3. Deploying your web application</h2>
 
 <p>
@@ -137,16 +118,20 @@ $ ssh user@127.0.0.1</pre>
 $ tar xf /tmp/application.tar.gz</pre>
 
 <p>
-  And voilà ! You may now start your application with one of the following command (depending on your system):
+  And voilà ! You may now start your application with the following command:
 </p>
 
-<pre>$ systemctl start application_name # Linux
-$ service application_name start # FreeBSD</pre>
+<pre>$ /usr/local/bin/application_name/start.sh</pre>
 
 <p>
   Where <i>application_name</i> is the name you've given to your application when creating it with the
   <code>crails new</code> command (which you can customize by changing the <code>name</code> variable in
   the <code>.crails</code> file at the root of your project).
+</p>
+
+<p>
+  Of course, the application will stop as soon as you leave the terminal. To have your application run in
+  the background, we need to deploy it as a service... which is precisely the purpose of the next chapter.
 </p>
 
 <h3>3.2 Using the deploy command</h3>
@@ -156,7 +141,13 @@ $ service application_name start # FreeBSD</pre>
   <i>deploy</i> command, such as:
 </p>
 
-<pre>$ crails deploy --hostname 127.0.0.1 --deploy-user user --sudo --pubkey --user webapp --group www</pre>
+<pre>$ crails deploy \
+  --hostname 127.0.0.1 \
+  --deploy-user user \
+  --sudo \
+  --pubkey \
+  --user webapp \
+  --group www</pre>
 
 <p>
   Wow, that was a lot of options ! Let's go over what those do:
@@ -185,7 +176,43 @@ $ service application_name start # FreeBSD</pre>
   so if you didn't have it prepped when you last installed crails, the deploy command won't be available.
 </div>
 
-<h3>3.3 FreeBSD jails</h3>
+<h3>3.3 Environment</h3>
+
+<p>
+  Your deployed application might require environment variables to define some instance-specific settings. That
+  is probably the best way to define your database settings, for instance.
+</p>
+
+<p>
+  You can optionally provide your own environment files or variables, which will be compiled to a single file
+  and uploaded to <code>/usr/share/crails-deploy</code> (the filename being your application name).
+</p>
+
+<p>
+  Use the <code>--env</code> option to add environment variables:
+</p>
+
+<pre>$ crails deploy [options] --env VARIABLE1=example VARIABLE2=example</pre>
+
+<p>
+  Or environment files:
+</p>
+
+<pre>$ crails deploy [options] --env example1.env example2.env ...</pre>
+
+<p>
+  The environment file will be loaded when you start your application as a service (using
+  <code>systemctl start my_application</code> on Linux, for instance).
+</p>
+
+<p>
+  Environment files should define variables using the following format:
+</p>
+
+<pre>DATABASE_URL="postgresql://user:password@localhost:5432/app"
+REDIS_URL="redis://localhost:5379"</pre>
+
+<h3>3.4 FreeBSD jails</h3>
 
 <p>
   If you're using a FreeBSD server, you may want to deploy your application in a <a href="https://docs.freebsd.org/en/books/handbook/jails/" target="_blank">jail</a>. That's a great idea ! And good for you, the <code>deploy</code> command can help you with that !
@@ -206,7 +233,7 @@ $ service application_name start # FreeBSD</pre>
   and only the <i>service file</i> will be deployed outside of the jail.
 </p>
 
-<h3>3.4 Deploying pre-built packages</h4>
+<h3>3.5 Deploying pre-built packages</h4>
 
 <p>
   The methods we've seen before are all-in-one: they build, package and deploy your application all at once.
@@ -218,16 +245,28 @@ $ service application_name start # FreeBSD</pre>
 </p>
 
 <pre>$ crails-deploy \
+  --app-name application_name \
   --package my_package.tar.gz \
   --hostname 127.0.0.1 \
-  --sudo --pubkey</pre>
+  --sudo --pubkey \
+  --start /usr/local/bin/package_name/start.sh \
+  --stop /usr/local/bin/package_name/stop.sh</pre>
 
 <p>
-  The option are the same as the ones for <code>crails deploy</code>, except you must specify a <code>--package</code>
-  option pointing to the archive you wish to deploy.
+  The option are the same as the ones for <code>crails deploy</code>, except you must:
 </p>
 
-<div class="hint-box">When in doubt, use <code>crails-deploy --help</code> to list the available options</div>
+<ul>
+  <li>specify a <code>--package</code> option pointing to the archive you wish to deploy,</li>
+  <li>specify the start/stop scripts using the <code>--start/<code> and <code>--stop</code> options,</li>
+  <li>set an application name using the <code>--app-name</code> option. This may be the same name as the package's.</li>
+</ul>
+
+<p>
+  Note that the same package can be deployed several time with different <code>app-name</code>, and thus, different services, environment, logs and runtime directories. This means you can deploy several instances of the same package on the same machine.
+</p>
+
+<div class="hint-box">crails-deploy is framework agnostic, and can work for projects even outside of the crails framework. Check out the project's README at <a href="https://github.com/crails-framework/crails-deploy" target="_blank">crails-deploy's github page</a> to learn more about this tool.</div>
 
 <h2>4. Packaging with Docker</h2>
 
@@ -281,7 +320,7 @@ $ service application_name start # FreeBSD</pre>
   </tr>
   <tr>
     <td>docker/base/build-environment.sh</td>
-    <td>This customizable file sets some build options used by the build-crails.sh script.</td>
+    <td>This file sets some build options used by the build-crails.sh script.</td>
   </tr>
   <tr>
     <td>docker/base/build-odb-compiler.sh</td>
@@ -360,4 +399,19 @@ $ crails plugins docker new --name my_machine --image ubuntu:22.04
 
 <p>
   The options of the <code>crails package</code> command are all also available with this comannd.
+</p>
+
+<h4>4.2.4 Deploying your application</h4>
+
+<p>
+  Similarly to the package command, you can also use the deploy command with the docker plugin, such as:
+</p>
+
+<pre>$ crails plugins docker deploy \
+  --dockerfile my_machine \
+  --hostname 192.168.0.15 \
+  --deploy-user user</pre>
+
+<p>
+  The options of the <code>crails deploy</code> command are all also available with this command.
 </p>

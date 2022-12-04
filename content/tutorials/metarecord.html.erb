@@ -1,0 +1,181 @@
+---
+title: "MetaRecord: generating models"
+---
+
+<div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  MetaRecord is a code generation tool using a Domain Self Language to help you
+  define models and some of their behaviours, such as validation or representation.
+</p>
+
+<p>
+  MetaRecord provides a set of <b>generators</b>, which uses the models you defined in its
+  DSL to generate code for several targets. Targets can be your own crails application,
+  but may also include
+  <a href="http://aurelia.io" target="_blank">aurelia.js</a>,
+  <a href="https://crails-framework.github.io/website/comet/" target="_blank">comet.cpp</a>, or
+  <a href="https://www.qt.io/product/framework" target="_blank">Qt</a>. Meaning you will be able to generate
+  code for server and web, mobile or desktop clients.
+</p>
+
+<h3>1.1 Preparing your environment</h3>
+
+<p>
+  MetaRecord is developed in Ruby. If you don't already have Ruby installed on your computer,
+  use the following
+  <a href="https://www.ruby-lang.org/en/documentation/installation/" target="_blank">install guide</a>.
+</p>
+
+<p>
+  You will then need to install MetaRecord itself, with the following command:
+</p>
+
+<pre>$ gem install meta-record</pre>
+
+<p>
+  You may need administrator rights to perform that last command.
+</p>
+
+<p>
+  We also need to install a database backend that MetaRecord will generate code for. In this
+  tutorial, we will use the <i>ODB plugin</i>, which you can add to your application with the
+  following command:
+</p>
+
+<pre>$ crails plugins install odb</pre>
+
+<div class="hint-box">
+  You can learn the basics of the ODB plugin by following the <a href="/getting-started">Getting started</a> guide.
+</div>
+
+<h3>1.2 Adding the metarecord plugin</h3>
+
+<p>
+  Use the following command to add the metarecord plugin to your crails application:
+</p>
+
+<pre>$ crails plugins metarecord install</pre>
+
+<p>
+  The plugin installer will check your current configuration and pick the <i>generators</i> that
+  are relevant to you. For instance, if you have the <i>comet</i> plugin installed, the comet generators
+  will be enabled.
+</p>
+
+<div class="hint-box">
+  You can list, add or remove available generators using the <code>list</code>, <code>add</code> and <code>remove</code> sub-commands with the
+  <code>$ crails plugins metarecord generators [sub-command]</code> command.
+</div>
+
+<h2>2. Creating models</h2>
+
+<p>
+  Now that the metarecord plugin is installed, the <code>scaffold</code> command will generate models accordingly.
+  Let's check it out with the following command:
+</p>
+
+<pre>$ crails scaffold model -m Article -p std::string/title std::string/content</pre>
+
+<p>
+  Now that the metarecord plugin is installed, this command will create the following files:
+</p>
+
+<table>
+  <tr>
+    <th>File</th>
+    <th>Purpose</th>
+  </tr>
+  <tr>
+    <td>app/data/article.rb</td>
+    <td>description of your model fields and relationships</td>
+  </tr>
+  <tr>
+    <td>app/models/article.hpp</td>
+    <td>your customizable model header</td>
+  </tr>
+  <tr>
+    <td>app/models/article.cpp</td>
+    <td>model implementation</td>
+  </tr>
+</table>
+
+<p>
+  Let's take a look at the <i>data</i> file for our new model:
+</p>
+
+<pre class="filepath">app/data/article.rb</pre>
+<%= code_block <<RUBY
+Model.add 'Article', hpp: 'app/models/article.hpp' do
+  resource_name 'article'
+  #order_by 'property'
+
+  visibility :protected
+  property 'std::string', 'title'
+  property 'std::string', 'content'
+end
+RUBY
+%>
+
+<p>
+  Let's see what each of these lines mean:
+</p>
+
+<p>
+  <code>Model.add</code> is used to register a new model to MetaRecord. Every model
+  added in a <i>data</i> file will have an interface generated in your project's <i>lib</i>
+  directory, at a path relative to the <i>data</i>'s filepath. In this example, it will be
+  <code>lib/app/data/article.hpp</code>, and the interface's name will be <code>MetaRecord::Article</code>.
+</p>
+
+<p>
+  <code>resource_name</code> is used to identify the model type as a string. It can be used to find the
+  views related to the model, or to define a scope when rendering the model as JSON.
+</p>
+
+<p>
+  <code>order_by</code> defines the default property to used to sort your result when making queries.
+</p>
+
+<p>
+  <code>visibility</code> gives you the opportunity to define whether the properties you are about to
+  define should be defined as <code>public</code>, <code>protected</code> or <code>private</code>. Note
+  that this only applies to the properties themselves, as public getters and setters will be generated
+  anyway.
+</p>
+
+<p>
+  <code>property</code> defines new properties. The first argument is the C++ typename for your property:
+  note that it must be a type that ODB knows how to serialize (we'll cover this later). The second argument
+  is the C++ name for your property.
+</p>
+
+<h3>2.1 SQL properties</h3>
+
+<p>
+</p>
+
+<h3>2.2 Default values</h3>
+
+<p>
+</p>
+
+<h3>2.3 Validations</h3>
+
+<p>
+</p>
+
+<h2>3. Relationships</h2>
+
+<p>
+  Relationships bind a model to one or several other models. Not only will they help you
+  query objects easily, they're very useful to help you fetch related objects in batch,
+  rather than one by one. This is paramount to optimizing your application, limiting
+  potential <a href="https://medium.com/doctolib/understanding-and-fixing-n-1-query-30623109fe89">N+1 queries</a>.
+</p>
+
+<h3>3.1 One to one</h3>
+<h3>3.2 One to many</h3>
+<h3>3.3 Many to many</h3>
