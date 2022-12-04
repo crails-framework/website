@@ -546,7 +546,7 @@ CPP
 
 <p>
   It's all it takes: the <code>use_layout</code> will instantiate an ApplicationLayout and append it to
-  the view, then the <code>render</code> method wil instantiate our view and append to the the layout's
+  the view, then the <code>render</code> method wil instantiate our view and append it to the layout's
   content &lt;slot&gt;.
 </p>
 
@@ -582,6 +582,7 @@ CPP
   Using the <code>ref</code> attribute make these elements visible from your custom element class: we can now implement event handlers in our element class as such:
 </p>
 
+<pre class="filepath">views/todo_view.hpp</pre>
 <%= code_block <<CPP
 #pragma once
 #include "templates/todo_view.hpp"
