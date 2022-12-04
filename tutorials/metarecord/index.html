@@ -1,8 +1,28 @@
----
-title: "MetaRecord: generating models"
----
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - MetaRecord: generating models</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
 
-<div id="with-index"></div>
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.11">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
 
 <h2>1. Introduction</h2>
 
@@ -48,7 +68,7 @@ title: "MetaRecord: generating models"
 <pre>$ crails plugins odb install</pre>
 
 <div class="hint-box">
-  You can learn the basics of the ODB plugin by following the <a href="/getting-started">Getting started</a> guide.
+  You can learn the basics of the ODB plugin by following the <a href="../../getting-started">Getting started</a> guide.
 </div>
 
 <h3>1.2 Adding the metarecord plugin</h3>
@@ -84,7 +104,7 @@ title: "MetaRecord: generating models"
 </p>
 
 <table>
-  <tr>
+  <tbody><tr>
     <th>File</th>
     <th>Purpose</th>
   </tr>
@@ -100,15 +120,14 @@ title: "MetaRecord: generating models"
     <td>app/models/article.cpp</td>
     <td>model implementation</td>
   </tr>
-</table>
+</tbody></table>
 
 <p>
   Let's take a look at the <i>data</i> file for our new model:
 </p>
 
 <pre class="filepath">app/data/article.rb</pre>
-<%= code_block <<RUBY
-Model.add 'Article', hpp: 'app/models/article.hpp' do
+<pre><code class="language-cpp">Model.add 'Article', hpp: 'app/models/article.hpp' do
   resource_name 'article'
   #order_by 'property'
 
@@ -116,8 +135,7 @@ Model.add 'Article', hpp: 'app/models/article.hpp' do
   property 'std::string', 'title'
   property 'std::string', 'content'
 end
-RUBY
-%>
+</code></pre>
 
 <p>
   Let's see what each of these lines mean:
@@ -164,8 +182,7 @@ RUBY
 </p>
 
 <pre class="filepath">app/data/article.rb</pre>
-<%= code_block <<RUBY
-Model.add 'Article', hpp: 'app/models/article.hpp' do
+<pre><code class="language-cpp">Model.add 'Article', hpp: 'app/models/article.hpp' do
   resource_name 'article'
   #order_by 'property'
 
@@ -174,8 +191,7 @@ Model.add 'Article', hpp: 'app/models/article.hpp' do
   property 'std::string', 'content'
   property 'unsigned int', 'view_count', default: 0
 end
-RUBY
-%>
+</code></pre>
 
 <h3>2.3 Validations</h3>
 
@@ -199,11 +215,10 @@ RUBY
 </p>
 
 <pre class="filepath">app/controllers/article.hpp</pre>
-<%= code_block <<CPP
-class ArticleController : public ApplicationController
+<pre><code class="language-cpp">class ArticleController : public ApplicationController
 {
 public:
-  ArticleController(Crails::Context& context) : ApplicationController(context)
+  ArticleController(Crails::Context&amp; context) : ApplicationController(context)
   {
   }
 
@@ -221,8 +236,7 @@ public:
       repsond_with(422);
   }
 };
-CPP
-%>
+</code></pre>
 
 <p>
   Validation errors are stored in the <i>errors</i> property.
@@ -255,8 +269,7 @@ CPP
 </p>
 
 <pre class="filepath">app/data/article.rb</pre>
-<%= code_block <<RUBY
-add_include 'app/models/author.hpp'
+<pre><code class="language-cpp">add_include 'app/models/author.hpp'
 
 Model.add 'Article', hpp: 'app/models/article.hpp' do
   resource_name 'article'
@@ -268,8 +281,7 @@ Model.add 'Article', hpp: 'app/models/article.hpp' do
 
   has_one 'Author', 'author'
 end
-RUBY
-%>
+</code></pre>
 
 <p>
   To create this reference to the author model, we've added two lines to our article model description:
@@ -310,8 +322,7 @@ RUBY
 </p>
 
 <pre class="filepath">app/data/article.rb</pre>
-<%= code_block <<RUBY
-add_include 'app/models/author.hpp'
+<pre><code class="language-cpp">add_include 'app/models/author.hpp'
 add_include 'app/models/comment.hpp'
 
 Model.add 'Article', hpp: 'app/models/article.hpp' do
@@ -325,8 +336,7 @@ Model.add 'Article', hpp: 'app/models/article.hpp' do
   has_one 'Author', 'author'
   has_many 'Comment, 'comments'
 end
-RUBY
-%>
+</code></pre>
 
 <p>
   This is very similar to the <code>has_one</code> relationship: we've referenced the include file for our
@@ -354,8 +364,7 @@ RUBY
 </p>
 
 <pre class="filepath">app/data/article.rb</pre>
-<%= code_block <<RUBY
-add_include 'app/models/author.hpp'
+<pre><code class="language-cpp">add_include 'app/models/author.hpp'
 add_include 'app/models/comment.hpp'
 
 Model.add 'Article', hpp: 'app/models/article.hpp' do
@@ -369,8 +378,7 @@ Model.add 'Article', hpp: 'app/models/article.hpp' do
   has_one 'Author', 'author', join: false
   has_many 'Comment, 'comments', join: false
 end
-RUBY
-%>
+</code></pre>
 
 <p>
 
@@ -379,3 +387,14 @@ RUBY
 <h3>3.4 Many to many</h3>
 
 
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>

@@ -7,7 +7,7 @@
     <script src="../../js/index.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.12.7">
+    <meta name="generator" content="Nanoc 4.12.11">
   </head>
   <body class="comet-style">
     <div id="header">
@@ -542,7 +542,7 @@ void TodoController::index()
 
 <p>
   It's all it takes: the <code>use_layout</code> will instantiate an ApplicationLayout and append it to
-  the view, then the <code>render</code> method wil instantiate our view and append to the the layout's
+  the view, then the <code>render</code> method wil instantiate our view and append it to the layout's
   content &lt;slot&gt;.
 </p>
 
@@ -576,6 +576,7 @@ void TodoController::index()
   Using the <code>ref</code> attribute make these elements visible from your custom element class: we can now implement event handlers in our element class as such:
 </p>
 
+<pre class="filepath">views/todo_view.hpp</pre>
 <pre><code class="language-cpp">#pragma once
 #include "templates/todo_view.hpp"
 

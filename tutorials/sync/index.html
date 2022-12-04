@@ -7,7 +7,7 @@
     <script src="../../js/index.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.12.7">
+    <meta name="generator" content="Nanoc 4.12.11">
   </head>
   <body>
     <div id="header">
@@ -365,13 +365,31 @@ private:
   Let's update the <code>index</code> action:
   </p>
 
-<pre><code class="language-cpp">  void index()
+<pre><code class="language-cpp"></code></pre>
+<pre class="filepath">app/controller/task.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include "application.hpp"
+#include &lt;crails/sync/task.hpp&gt; // add the header for Crails::Sync::Task
+#include &lt;iostream&gt;
+
+class TaskController : public ApplicationController
+{
+public:
+  TaskController(Crails::Context&amp; context) :
+    ApplicationController(context)
+  {
+  }
+
+  void index()
   {
     int step_count = 60;
     auto task = std::make_shared&lt;Crails::Sync::Task&gt;("task", step_count);
 
     std::thread(std::bind(run_async_task, task, step_count)).detach();
   }
+
+  ...
+};
 </code></pre>
 
 <p>
@@ -414,7 +432,7 @@ private:
 void Crails::Router::initialize()
 {
   match_action("GET", "/task", TaskController, index);
-  match_sync_task("/tasks/:task_id");
+  match_sync_task("/task/:task_id");
 }
 </code></pre>
 

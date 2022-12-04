@@ -7,7 +7,7 @@
     <script src="../../js/index.js"></script>
 
     <!-- you don't need to keep this, but it's cool for stats! -->
-    <meta name="generator" content="Nanoc 4.12.7">
+    <meta name="generator" content="Nanoc 4.12.11">
   </head>
   <body>
     <div id="header">
@@ -39,23 +39,14 @@
 </p>
 
 <p>
-  Create the file <code>app/views/home/index.ecpp</code> as following:
+  Create the file <code>app/views/home/index.html</code> as following:
 </p>
 
 <pre><code class="language-html">&lt;p&gt;Hi HTML template !&lt;/p&gt;
 </code></pre>
 
 <p>
-  The <code>ecpp</code> extension is used for html templates, and is used by the code generator
-  to find your templates and generate the corresponding code.
-</p>
-
-<div class="hint-box">
-  Json templates use the <code>cjson</code> extension.
-</div>
-
-<p>
-  You may compile your template by calling the <code>crails compile before_compile</code>, which will run
+  You may compile your template by calling the <code>crails build</code> command, which will run
   all the code generators.
 </p>
 

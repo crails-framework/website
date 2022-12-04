@@ -1,8 +1,28 @@
----
-title: Testing your Application
----
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Testing your Application</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
 
-<div id="with-index"></div>
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.11">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
 
 <h2>1. Introduction</h2>
 
@@ -26,13 +46,12 @@ title: Testing your Application
 </p>
 
 <pre class="filepath">spec/my_spec.cpp</pre>
-<%= code_block <<CPP
-#include "my_spec.hpp"
+<pre><code class="language-cpp">#include "my_spec.hpp"
 
 MySpec::MySpec()
 {
-  before(std::bind(&MySpec::before_all, this));
-  after(std::bind(&MySpec::after_all, this));
+  before(std::bind(&amp;MySpec::before_all, this));
+  after(std::bind(&amp;MySpec::after_all, this));
 
   describe("name of a method", [this]()
   {
@@ -50,8 +69,7 @@ void MySpec::before_all()
 void MySpec::after_all()
 {
 }
-CPP
-%>
+</code></pre>
 
 <p>
   Tests are reparted in categories defined with the <code>describe</code> method. Then,
@@ -71,22 +89,20 @@ CPP
 </p>
 
 <pre class="filepath">spec/spec.cpp</pre>
-<%= code_block <<CPP
-#include <crails/tests/runner.hpp>
+<pre><code class="language-cpp">#include &lt;crails/tests/runner.hpp&gt;
 #include "my_spec.hpp"
 
 using namespace std;
 
 void Crails::Tests::Runner::setup()
 {
-  helpers.push_back(make_shared<MySpec>());
+  helpers.push_back(make_shared&lt;MySpec&gt;());
 }
 
 void Crails::Tests::Runner::shutdown()
 {
 }
-CPP
-%>
+</code></pre>
 
 <p>
   Our test is ready to fail with success. Run the following command:
@@ -104,9 +120,8 @@ $ build/tests</pre>
 </p>
 
 <pre class="filepath">spec/my_spec.hpp</pre>
-<%= code_block <<CPP
-#include <crails/tests/helper.hpp>
-#include <crails/tests/request.hpp>
+<pre><code class="language-cpp">#include &lt;crails/tests/helper.hpp&gt;
+#include &lt;crails/tests/request.hpp&gt;
 
 class MySpec : public Crails::Tests::Helper
 {
@@ -125,8 +140,7 @@ class MySpec : public Crails::Tests::Helper
     });
   }
 };
-CPP
-%>
+</code></pre>
 
 <p>
   If you run the test right now, you'll see an exception thrown, warning you
@@ -135,9 +149,8 @@ CPP
 </p>
 
 <pre class="filepath">spec/spec.cpp</pre>
-<%= code_block <<CPP
-#include <crails/tests/runner.hpp>
-#include <crails/router.hpp>
+<pre><code class="language-cpp">#include &lt;crails/tests/runner.hpp&gt;
+#include &lt;crails/router.hpp&gt;
 #include "my_spec.hpp"
 
 using namespace std;
@@ -145,16 +158,15 @@ using namespace std;
 void Crails::Tests::Runner::setup()
 {
   Crails::Router::singleton::initialize();
-  Crails::Router::singleton::get()->initialize();
-  helpers.push_back(make_shared<MySpec>());
+  Crails::Router::singleton::get()-&gt;initialize();
+  helpers.push_back(make_shared&lt;MySpec&gt;());
 }
 
 void Crails::Tests::Runner::shutdown()
 {
   Crails::Router::singleton::finalize();
 }
-CPP
-%>
+</code></pre>
 
 <p>
   Our test should now pass: build and run the test suite:
@@ -171,9 +183,8 @@ $ build/tests</pre>
 </p>
 
 <pre class="filepath">spec/my_spec.hpp</pre>
-<%= code_block <<CPP
-#include <crails/tests/helper.hpp>
-#include <crails/tests/request.hpp>
+<pre><code class="language-cpp">#include &lt;crails/tests/helper.hpp&gt;
+#include &lt;crails/tests/request.hpp&gt;
 
 class MySpec : public Crails::Tests::Helper
 {
@@ -182,24 +193,24 @@ class MySpec : public Crails::Tests::Helper
     using namespace Crails;
     before([this]()
     {
-      std::cout << "before each tests" << std::endl;
+      std::cout &lt;&lt; "before each tests" &lt;&lt; std::endl;
     });
 
     after([this]()
     {
-      std::cout << "after each tests" << std::endl;
+      std::cout &lt;&lt; "after each tests" &lt;&lt; std::endl;
     });
 
     describe("index", [this]()
     {
       before([this]()
       {
-        std::cout << "before each index tests" << std::endl;
+        std::cout &lt;&lt; "before each index tests" &lt;&lt; std::endl;
       });
 
       after([this]()
       {
-        std::cout << "after each index tests" << std::endl;
+        std::cout &lt;&lt; "after each index tests" &lt;&lt; std::endl;
       });
 
       it("lists items", [this]()
@@ -212,8 +223,7 @@ class MySpec : public Crails::Tests::Helper
     });
   }
 };
-CPP
-%>
+</code></pre>
 
 <h2>3. End-to-end testing</h2>
 
@@ -246,25 +256,23 @@ CPP
 </p>
 
 <pre class="filepath">spec/spec.cpp</pre>
-<%= code_block <<CPP
-#include <crails/tests/runner.hpp>
+<pre><code class="language-cpp">#include &lt;crails/tests/runner.hpp&gt;
 #include "my_spec.hpp"
-#include <crails/tests/background_server.hpp>
+#include &lt;crails/tests/background_server.hpp&gt;
 
 using namespace std;
 
 void Crails::Tests::Runner::setup()
 {
   Crails::Tests::BackgroundServer::initialize();
-  helpers.push_back(make_shared<MySpec>());
+  helpers.push_back(make_shared&lt;MySpec&gt;());
 }
 
 void Crails::Tests::Runner::shutdown()
 {
   Crails::Tests::BackgroundServer::finalize();
 }
-CPP
-%>
+</code></pre>
 
 <h3>3.2 Writing an end-to-end test</h3>
 
@@ -276,10 +284,9 @@ CPP
 </p>
 
 <pre class="filepath">spec/my_spec.hpp</pre>
-<%= code_block <<CPP
-#pragma once
-#include <crails/tests/helper.hpp>
-#include <crails/tests/selenium_helper.hpp>
+<pre><code class="language-cpp">#pragma once
+#include &lt;crails/tests/helper.hpp&gt;
+#include &lt;crails/tests/selenium_helper.hpp&gt;
 
 class MySpec : public Crails::Tests::SeleniumHelper
 {
@@ -290,29 +297,27 @@ private:
   void before_all();
   void after_all();
 };
-CPP
-%>
+</code></pre>
 
 <p>
   We're now ready to update our test so that it tests a page in the browser:
 </p>
 
 <pre class="filepath">spec/my_spec.cpp</pre>
-<%= code_block <<CPP
-#include "my_spec.hpp"
+<pre><code class="language-cpp">#include "my_spec.hpp"
 
 MySpec::MySpec()
 {
-  before(std::bind(&MySpec::before_all, this));
-  after(std::bind(&MySpec::after_all, this));
+  before(std::bind(&amp;MySpec::before_all, this));
+  after(std::bind(&amp;MySpec::after_all, this));
 
   describe("name of a method", [this]()
   {
     it("fails", [this]()
     {
-      page->visit("/");
-      page->expect()
-        .to_have_element("body > h1")
+      page-&gt;visit("/");
+      page-&gt;expect()
+        .to_have_element("body &gt; h1")
         .with_content("Welcome to your new Crails Application");
     });
   });
@@ -325,8 +330,7 @@ void MySpec::before_all()
 void MySpec::after_all()
 {
 }
-CPP
-%>
+</code></pre>
 
 <p>
   As you can see on this example, you have no access to a <code>page</code> property, which allows you to
@@ -352,10 +356,19 @@ CPP
   using the <code>page-&gt;find</code> method, using a selector string:
 </p>
 
-<%= code_block <<CPP
-webdriverxx::Element element = page->find("input[type=\\"text\\"]");
+<pre><code class="language-cpp">webdriverxx::Element element = page-&gt;find("input[type=\"text\"]");
 
 element.SendKeys("Hello, world !");
-page->find("input[type\\"submit\\"]").Click();
-CPP
-%>
+page-&gt;find("input[type\"submit\"]").Click();
+</code></pre>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>

@@ -1,8 +1,28 @@
----
-title: Packaging and Deploying your Applications
----
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Packaging and Deploying your Applications</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
 
-<div id="with-index"></div>
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.11">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
 
 <h2>1. Introduction</h2>
 
@@ -41,7 +61,7 @@ title: Packaging and Deploying your Applications
     used to start and stop your web application.
   </li>
   <li>
-    <i>Static files</i> including the <code>public</code> folder from your project</i>
+    <i>Static files</i> including the <code>public</code> folder from your project
   </li>
   <li>
     <i>Runtime directory</i> which is the only element which should have both read and write access.
@@ -233,7 +253,7 @@ REDIS_URL="redis://localhost:5379"</pre>
   and only the <i>service file</i> will be deployed outside of the jail.
 </p>
 
-<h3>3.5 Deploying pre-built packages</h4>
+<h3>3.5 Deploying pre-built packages</h3>
 
 <p>
   The methods we've seen before are all-in-one: they build, package and deploy your application all at once.
@@ -258,9 +278,9 @@ REDIS_URL="redis://localhost:5379"</pre>
 
 <ul>
   <li>specify a <code>--package</code> option pointing to the archive you wish to deploy,</li>
-  <li>specify the start/stop scripts using the <code>--start/<code> and <code>--stop</code> options,</li>
+  <li>specify the start/stop scripts using the <code>--start/<code> and <code>--stop</code> options,</code></code></li><code><code>
   <li>set an application name using the <code>--app-name</code> option. This may be the same name as the package's.</li>
-</ul>
+</code></code></ul><code><code>
 
 <p>
   Note that the same package can be deployed several time with different <code>app-name</code>, and thus, different services, environment, logs and runtime directories. This means you can deploy several instances of the same package on the same machine.
@@ -298,7 +318,7 @@ REDIS_URL="redis://localhost:5379"</pre>
 </p>
 
 <table>
-  <tr>
+  <tbody><tr>
     <th>File/Folder</th>
     <th>Purpose</th>
   </tr>
@@ -325,12 +345,12 @@ REDIS_URL="redis://localhost:5379"</pre>
   <tr>
     <td>docker/base/build-odb-compiler.sh</td>
     <td>Optional: present when you're using the odb plugin.
-  </tr>
+  </td></tr>
   <tr>
     <td>docker/base/build-comet.sh</td>
     <td>Optional: present when you're using the comet plugin.
-  </tr>
-</table>
+  </td></tr>
+</tbody></table>
 
 <p>
   The <i>base</i> configuration is meant as an example: we can't really guesstimate what your own production
@@ -344,8 +364,7 @@ REDIS_URL="redis://localhost:5379"</pre>
   with the following command:
 </p>
 
-<pre>
-$ crails plugins docker new --name my_machine --image ubuntu:22.04
+<pre>$ crails plugins docker new --name my_machine --image ubuntu:22.04
 </pre>
 
 <p>
@@ -415,3 +434,14 @@ $ crails plugins docker new --name my_machine --image ubuntu:22.04
 <p>
   The options of the <code>crails deploy</code> command are all also available with this command.
 </p>
+
+      </code></code></div><code><code>
+    </code></code></div><code><code>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</code></code></body></html>
