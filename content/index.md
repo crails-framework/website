@@ -46,7 +46,7 @@ Crails provides several code-generating tools, most notably with **MetaRecord** 
 	end
 
 ### Frontend C++ development
-Crails integrates **Comet.cpp**, which uses [Cheerp](https://www.leaningtech.com/pages/cheerp.html) to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript, Comet.cpp provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on...
+Crails integrates **Comet.cpp**, which uses [Cheerp](https://www.leaningtech.com/pages/cheerp.html) to provide a frontend C++ MVC-based development framework. While Cheerp compiles your C++ code into JavaScript and WASM, Comet.cpp provides C++ utilities for view templating, interacting with the DOM, making HTTP queries, and so on...
 
 	#include <comet/element.hpp>
 	#include <comet/globals.hpp>
@@ -88,4 +88,4 @@ Follow our guides to start developing your application:
 
 * [Getting Started with Crails](/getting-started)
 * [Crails Guides](/tutorials)
-* The API Documentation
+* [The API Documentation](https://crails-framework.github.io/api-reference)
