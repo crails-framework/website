@@ -90,10 +90,6 @@ title: Getting Started with Crails Framework
     <td>This folder is used for application code that you haven't written yourself. Crails uses several code generating utilities: the <code>lib</code> folder is where this code will be generated and compiled from</td>
   </tr>
   <tr>
-    <td>logs/</td>
-    <td>In a production environment, this is where your application's log files will be stored</td>
-  </tr>
-  <tr>
     <td>public/</td>
     <td>The only folder seen by the world as-is. Contains static files and compiled assets.</td>
   </tr>
@@ -164,8 +160,6 @@ public:
   void initialize() override;
   void finalize() override;
 };
-
-#endif
 CPP
 %>
 
@@ -215,8 +209,6 @@ public:
                                   // with a plain text answer
   }
 };
-
-#endif
 CPP
 %>
 
@@ -226,8 +218,8 @@ CPP
 
 <pre class="filepath">app/routes.cpp</pre>
 <%= code_block <<HTML
-#include <crails/router.hpp>;
-#include "controller/welcome.hpp"
+#include <crails/router.hpp>
+#include "controllers/welcome.hpp"
 
 void Crails::Router::initialize()
 {
@@ -264,7 +256,7 @@ $ build/server</code></pre>
 </p>
 
 <p>
-  A view's purpose is to display this information in a human readable format. An important distinction to make is that it is the <i>controller</i>, not the view, where information is collected. The view should just display that information. By default, view templates are written in a language called ecpp (Embedded C++) which is used to generate the C++ code for your views.
+  A view's purpose is to display information in a human readable format. An important distinction to make is that it is the <i>controller</i>, not the view, where information is collected. The view should just display that information. By default, view templates are written in a language called ecpp (Embedded C++) which is used to generate the C++ code for your views.
 </p>
 
 <p>
