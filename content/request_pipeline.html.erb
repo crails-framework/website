@@ -251,7 +251,7 @@ public:
     Crails::Context& context,
     std::function<void(Crails::RequestParser::Status)> callback) const
   {
-    static const std::regex is_yaml("text/yaml", std::regex_constants::optimize);
+    static const std::regex is_yaml("text/vnd.yaml", std::regex_constants::optimize);
     bool has_acceptable_type = content_type_matches(params, is_yaml);
     bool has_relevant_method = context.params["method"].as<std::string>() != "GET";
 
@@ -259,17 +259,8 @@ public:
     {
       wait_for_body(context, [&context, callback]()
       {
-        bool was_valid_yaml = parse_yaml(
-          context.request.body() // This is how we retrieve the request's body
-        );
+        bool was_valid_yaml = context.response.get_status_code() != Crails::HttpStatus::bad_request);
 
-        if (was_valid_yaml)
-          callback(Stop);
-        else
-        {
-          context.response.set_status_code(Crails::HttpStatus::bad_request);
-          callback(Abort);
-        }
         callback(was_valid_yaml ? Stop : Abort);
       });
     }
@@ -277,10 +268,19 @@ public:
       callback(Continue);
   }
 
+  void body_received(Crails::Context& context, const std::string& body) const override
+  {
+    bool success = parse_yaml(context, body);
+
+    if (!success)
+      context.response.set_status_code(Crails::HttpStatus::bad_request);
+  }
+
 private:
-  bool parse_yaml(const std::string& source)
+  bool parse_yaml(Crails::Context& context, const std::string& body) const
   {
     // This is where we'll implement our YAML parser
+    return false;
   }
 };
 CPP
@@ -294,13 +294,167 @@ CPP
 
 <p>
   We then use <code>wait_for_body</code> so that our parser only runs if or when the body is available.
-  Then we call <code>parse_yaml</code>, our own method in which we will implement the actual parser.
-  In case of parse failure, we immediately respond to the query with a bad request status, and warn
-  the request pipe that the request has been entirely treated by calling <code>callback(Abort)</code>.
-  Otherwise, if the parsing was successfull, we tell the request pipe to go straight to running the
-  request handlers by calling <code>callback(Stop)</code>.
+  The parameters for <code>wait_for_body</code> are the request's <code>Context</code> and a callback
+  that will callback to the request pipeline with the parser's status code, after the request has been parsed.
+</p>
+
+<p>
+  Once the request body has been entirely received, it will be forwarded to the <code>body_received</code>
+  method: this is where we call our own custom method, which we called <code>parse_yaml</code>, in which we
+  will later implement the actual parser.
+</p>
+
+<p>
+  After <code>body_received</code> returns, the callback we passed as parameter to <code>wait_for_body</code>
+  will be called in turn, and the request pipeline will proceed to either the request handlers or end
+  the request, depending on whether we responded respectively with <code>Stop</code> or <code>Abort</code>.
+</p>
+
+<div class="hint-box">
+  Your request parser may also respond with the <code>Continue</code> status after parsing a request body,
+  however this may have some wicked repercussions. A request body can only be received a single time: if
+  two body parsers were to use <code>wait_for_body</code> on the same request, the pipeline would hang
+  undefinitely. As such, it is best to make it so that body parsers are always the last parser to run in
+  a pipeline, and do not allow other parsers to run after them.
+</div>
+
+<p>
+  If the parsing fails, we immediately set a response status (<i>400 bad request</i>). This is later
+  used in the <code>wait_for_body</code> callback to determine whether the parsing was successful or not.
 </p>
 
 <h3>3.3 Fill in the Params object</h3>
+
+<p>
+  We've seen how to receive a request body, but we aren't yet doing anything with it. In the following
+  chapter, we'll use the <a href="https://github.com/jbeder/yaml-cpp">yaml-cpp</a> library to parse our
+  YAML body and store it without the context's
+  <a href="https://crails-framework.github.io/api-reference/#/classes/::Crails::Context/params" target="_blank">params</a>
+  attribute.
+</p>
+
+<p>
+  The <code>params</code> attribute inherits from the <a href="https://crails-framework.github.io/api-reference/#/classes/::DataTree" target="_blank">DataTree</a>
+  class, which is used to store data in a structure independent from the query format. Here's how we would store a <code>YAML::Node</code> into a <code>DataTree</code>:
+</p>
+
+<%= code_block <<CPP
+static void load_yaml_tree(YAML::Node node, DataTree& tree)
+{
+  for (auto it = node.begin() ; it != node.end() ; ++it)
+  {
+    std::string key = it->first.as<string>();
+
+    tree[key] = it->second.as<string>();
+  }
+}
+CPP
+%>
+
+<p>
+  This simple function maps a YAML map of strings into our <code>DataTree</code> object. Let's try something a bit more complex, where
+  we can recursively load any structure of YAML:
+</p>
+
+<%= code_block <<CPP
+static void load_yaml_map(YAML::Node node, Data branch);
+static void load_yaml_array(YAML::Node node, Data branch);
+static void load_yaml_node(YAML::Node node, Data branch);
+
+// We'll first rewrite our function to use `load_yaml_node`, which
+// we will design to be recursively callable on any branch of the tree:
+static void load_yaml_tree(YAML::Node node, DataTree& tree)
+{
+  load_yaml_node(node, tree.as_data());
+}
+
+// Now we implement `load_yam_node` to filter node by types:
+// Sequences and Map will have their own functions, while
+// other types will be assigned to the branch as character strings:
+static void load_yaml_node(YAML::Node node, Data branch)
+{
+  switch (node.Type())
+  {
+  case YAML::NodeType::Null:
+    break ;
+  case YAML::NodeType::Sequence:
+    load_yaml_array(node, branch);
+    break ;
+  case YAML::NodeType::Map:
+    load_yaml_map(node, branch);
+    break ;
+  default:
+    branch = node.as<string>();
+    break ;
+  }
+}
+
+// For maps, we will just register them as new branches
+// of the tree:
+static void load_yaml_map(YAML::Node node, Data branch)
+{
+  for (auto it = node.begin() ; it != node.end() ; ++it)
+  {
+    std::string key = it->first.as<string>();
+
+    load_yaml_node(it->second, branch[key]);
+  }
+}
+
+// As for arrays/sequences, we store them using the
+// `push_back` method of the Data object:
+static void load_yaml_array(YAML::Node node, Data branch)
+{
+  for (auto it = node.begin() ; it != node.end() ; ++it)
+    branch.push_back(it->second.as<string>());
+}
+CPP
+%>
+
+<p>
+  We now have implemented all the functions needed to store a YAML node into a DataTree. Let's
+  now implement the <code>body_received</code> callback of our <code>MyRequestParser</code> class:
+</p>
+
+<%= code_block <<CPP
+void MyRequestParser::body_received(Crails::Context& context, const std::string& body) const
+{
+  YAML::Node node = YAML::Load(body);
+
+  load_yaml_tree(node, context.params);
+}
+CPP %>
+
+<p>
+  Now there's still an issue remaining: if the parsing fail, <code>YAML::Load</code> will throw an
+  exception, and our server will respond with an error 500. That would be inaccurate, as the error
+  lies in the query. Let's update our <code>body_received</code> method to handle parsing errors:
+</p>
+
+<%= code_block <<CPP
+void MyRequestParser::body_received(Crails::Context& context, const std::string& body) const
+{
+  try
+  {
+    YAML::Node node = YAML::Load(body);
+
+    load_yaml_tree(node, context.params);
+  }
+  catch (const std::exception& e)
+  {
+    context.response.set_status_code(Crails::HttpStatus::bad_request);
+  }
+}
+CPP
+%>
+
+<div class="hint-box">
+  Note that this is a very abridged support of YAML we've implemented here, for the sake
+  of the examples. Follow <a href="https://github.com/crails-framework/libcrails-yaml-parser" target="_blank">this link</a> to see a more complete
+  YAML parser for Crails.
+</div>
+
+<h3>3.4 Streaming a request body</h3>
+
 <p>
 </p>
