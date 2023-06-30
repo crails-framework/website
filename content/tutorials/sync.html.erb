@@ -360,6 +360,23 @@ CPP
   </p>
 
 <%= code_block <<CPP
+CPP
+%>
+<pre class="filepath">app/controller/task.hpp</pre>
+<%= code_block <<CPP
+#pragma once
+#include "application.hpp"
+#include <crails/sync/task.hpp> // add the header for Crails::Sync::Task
+#include <iostream>
+
+class TaskController : public ApplicationController
+{
+public:
+  TaskController(Crails::Context& context) :
+    ApplicationController(context)
+  {
+  }
+
   void index()
   {
     int step_count = 60;
@@ -367,6 +384,9 @@ CPP
 
     std::thread(std::bind(run_async_task, task, step_count)).detach();
   }
+
+  ...
+};
 CPP
 %>
 
@@ -413,7 +433,7 @@ CPP
 void Crails::Router::initialize()
 {
   match_action("GET", "/task", TaskController, index);
-  match_sync_task("/tasks/:task_id");
+  match_sync_task("/task/:task_id");
 }
 CPP
 %>
