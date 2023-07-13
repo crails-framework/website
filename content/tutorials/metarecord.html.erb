@@ -45,7 +45,7 @@ title: "MetaRecord: generating models"
   following command:
 </p>
 
-<pre>$ crails plugins install odb</pre>
+<pre>$ crails plugins odb install</pre>
 
 <div class="hint-box">
   You can learn the basics of the ODB plugin by following the <a href="/getting-started">Getting started</a> guide.
@@ -160,11 +160,76 @@ RUBY
 <h3>2.2 Default values</h3>
 
 <p>
+  You may also use the <i>default</i> option to set a default value for a property:
 </p>
+
+<pre class="filepath">app/data/article.rb</pre>
+<%= code_block <<RUBY
+Model.add 'Article', hpp: 'app/models/article.hpp' do
+  resource_name 'article'
+  #order_by 'property'
+
+  visibility :protected
+  property 'std::string', 'title', default: "Untitled"
+  property 'std::string', 'content'
+  property 'unsigned int', 'view_count', default: 0
+end
+RUBY
+%>
 
 <h3>2.3 Validations</h3>
 
 <p>
+  You may define a set of validations for your properties using the <i>validate</i> option. This
+  allows you to verify a couple of simple restrictions from your application code using the
+  <code>bool is_valid()</code> method defined for each of your models.
+</p>
+
+<h4>2.3.1 Min/Max</h4>
+
+<h4>2.3.3 Required</h4>
+
+<h4>2.3.4 Uniqueness</h4>
+
+<h4>2.3.5 Validating and reporting errors</h4>
+
+<p>
+  Once you have defined validations for your model, you can use the <i>is_valid</i> method
+  to check whether a model should be created or updated:
+</p>
+
+<pre class="filepath">app/controllers/article.hpp</pre>
+<%= code_block <<CPP
+class ArticleController : public ApplicationController
+{
+public:
+  ArticleController(Crails::Context& context) : ApplicationController(context)
+  {
+  }
+
+  void create()
+  {
+    Article article;
+
+    article.edit(params["article"]);
+    if (article.is_valid())
+    {
+      database.save();
+      redirect_to("/articles/" + std::to_string(article.get_id()));
+    }
+    else
+      repsond_with(422);
+  }
+};
+CPP
+%>
+
+<p>
+  Validation errors are stored in the <i>errors</i> property.
+</p>
+
+<p>
+  TODO
 </p>
 
 <h2>3. Relationships</h2>
@@ -177,5 +242,140 @@ RUBY
 </p>
 
 <h3>3.1 One to one</h3>
+
+<p>
+  Whenver you want to associate a model with another model, you will need to use the <code>has_one</code>
+  relationship. Let's imagine we want to add an author to our articles, we'd create the author model first:
+</p>
+
+<pre>$ crails scaffold model -m Author -p std::string/name</pre>
+
+<p>
+  Now that the Author model exists, let's add a reference to the article's author in the Article model:
+</p>
+
+<pre class="filepath">app/data/article.rb</pre>
+<%= code_block <<RUBY
+add_include 'app/models/author.hpp'
+
+Model.add 'Article', hpp: 'app/models/article.hpp' do
+  resource_name 'article'
+  #order_by 'property'
+
+  visibility :protected
+  property 'std::string', 'title'
+  property 'std::string', 'content'
+
+  has_one 'Author', 'author'
+end
+RUBY
+%>
+
+<p>
+  To create this reference to the author model, we've added two lines to our article model description:
+</p>
+
+<p>
+  The first line calls the <code>add_include</code> method: when referencing a model type from a model
+  description file, you need to use <code>add_include</code> to register the header defining the final type of
+  your model. In this case, it'll be <code>app/models/author.hpp</code>.
+</p>
+
+<p>
+  The second line is the <code>has_one</code> call: the first parameter is the type name for the model
+  you're referencing, and the second one is the name you'll give to the relationship.
+</p>
+
+<p>
+  <code>has_one</code> will generate the following methods:
+</p>
+
+<ul>
+  <li>get_author_id</li>
+  <li>get_author</li>
+  <li>set_author(shared_ptr&lt;Author&gt;)</li>
+</ul>
+
 <h3>3.2 One to many</h3>
-<h3>3.3 Many to many</h3>
+
+<p>
+  Let's say we now want to add comments to our article: there will be several comment for a single
+  article. Let's create the comment model first:
+</p>
+
+<pre>$ crails scaffold model -m Comment -p std::string/author std::string/content</pre>
+
+<p>
+  And we'll now register <i>comments</i> as a new relationship for the article model, used with <code>has_many</code>:
+</p>
+
+<pre class="filepath">app/data/article.rb</pre>
+<%= code_block <<RUBY
+add_include 'app/models/author.hpp'
+add_include 'app/models/comment.hpp'
+
+Model.add 'Article', hpp: 'app/models/article.hpp' do
+  resource_name 'article'
+  #order_by 'property'
+
+  visibility :protected
+  property 'std::string', 'title'
+  property 'std::string', 'content'
+
+  has_one 'Author', 'author'
+  has_many 'Comment, 'comments'
+end
+RUBY
+%>
+
+<p>
+  This is very similar to the <code>has_one</code> relationship: we've referenced the include file for our
+  comment model in our file's global scope, then registered a <code>has_many</code> relationship in the model's
+  scope. The following methods will be generated for the Article model:
+</p>
+
+<ul>
+  <li>get_comments_ids()</li>
+  <li>get_comments()</li>
+  <li>add_comment(shared_ptr&lt;Comment&gt;)</li>
+  <li>remove_comment(const Comment&amp;)</li>
+</ul>
+
+<h3>3.3 Joined relationships</h3>
+
+<p>
+  Up until now, we've used relationships without specifying any option. By default, relationship are <i>joined</i>,
+  meaning the content of a relationship will be automatically fetched whenever the related model gets loaded using
+  a <a href="https://www.w3schools.com/sql/sql_join.asp">JOIN query</a>.
+</p>
+
+<p>
+  Sometimes, you may not want to enable that behavior by default. The <i>join</i> option can be used to that end:
+</p>
+
+<pre class="filepath">app/data/article.rb</pre>
+<%= code_block <<RUBY
+add_include 'app/models/author.hpp'
+add_include 'app/models/comment.hpp'
+
+Model.add 'Article', hpp: 'app/models/article.hpp' do
+  resource_name 'article'
+  #order_by 'property'
+
+  visibility :protected
+  property 'std::string', 'title'
+  property 'std::string', 'content'
+
+  has_one 'Author', 'author', join: false
+  has_many 'Comment, 'comments', join: false
+end
+RUBY
+%>
+
+<p>
+
+</p>
+
+<h3>3.4 Many to many</h3>
+
+
