@@ -457,4 +457,135 @@ CPP
 <h3>3.4 Streaming a request body</h3>
 
 <p>
+  In some very specific cases, you may receive a request body that's too big to reasonably handle in a single step.
+  In which case, you'll want to receive the body asynchronously, chunk by chunk: this can be done by setting a
+  callback on the context's connection object.
+</p>
+
+<%= code_block <<CPP
+#pragma once
+#include <crails/request_parser.hpp>
+
+class MyRequestParser : public Crails::RequestParser
+{
+public:
+  void operator()(
+    Crails::Context& context,
+    std::function<void(Crails::RequestParser::Status)> callback
+  ) const
+  {
+    auto& connection = *context.connection;
+    auto& request = connection.get_request();
+
+    if (*(request.content_length()) > 0)
+    {
+      connection.on_received_body_chunk([this, callback](std::string_view chunk)
+      {
+        // Insert your handler here
+      });
+    }
+    else
+     callback(Continue);
+  }
+};
+CPP
+%>
+
+<p>
+  This is the basic gist of things. Note that we check for the body's content length first: if you
+  expect for an empty body to arrive, your query will just hang undefinitely, resulting in a memory leak.
+</p>
+
+<p>
+  Now we can't completely handle the request without knowing when it ends. This requires us to record how
+  many bytes we've read... but since request parsers are stateless, we'll have to create a different object
+  to record our state:
+</p>
+
+<%= code_block <<CPP
+#pragma once
+#include <crails/request_parser.hpp>
+
+class MyParserState
+{
+  int bytes_remaining;
+};
+CPP
+%>
+
+<p>
+  Then we'll create a smart pointer towards our state, and store it within our callback for
+  <code>Connection::on_received_body_chunk</code>:
+</p>
+
+<%= code_block <<CPP
+class MyRequestParser : public Crails::RequestParser
+{
+public:
+  void operator()(
+    Crails::Context& context,
+    std::function<void(Crails::RequestParser::Status)> callback
+  ) const
+  {
+    auto& connection = *context.connection;
+    auto& request = connection.get_request();
+
+    if (*(request.content_length()) > 0)
+    {
+      auto state = std::make_shared<MyParserState>();
+
+      state->bytes_remaining = *request.content_length();
+      connection.on_received_body_chunk(
+        std::bind(
+          &MyRequestParser::read_body_chunk,
+          state,
+          std::placeholders::_1,
+          callback
+        )
+      );
+    }
+    else
+      callback(Continue);
+  }
+
+  ...
+};
+CPP
+%>
+
+<div class="hint-box">
+  The <code>on_received_body_chunk</code> callbacks gets removed by the server as soon as a requests completes
+  or gets interrupted, ensuring any object we store in these callbacks get destroyed whenever they're no longer
+  needed.
+</div>
+
+<p>
+  Now all that's left to do is implement the <code>read_body_chunk</code> method, update our state and call the
+  pipeline's callback once the body has been fully received:
+</p>
+
+<%= code_block <<CPP
+class MyRequestParser : public Crails::RequestParser
+{
+  ...
+
+private:
+  void read_body_chunk(
+    std::shared_ptr<MyParserState> state,
+    std::string_view chunk,
+    std::function<void(Crails::RequestParser::Status)> callback
+  ) const
+  {
+    state->bytes_remaining -= chunk.length();
+    if (state->bytes_remaining <= 0)
+      callback(Stop);
+  }
+};
+CPP
+%>
+
+<h3>3.5 Set the size limit for request bodies</h3>
+
+<p>
+  TODO
 </p>
