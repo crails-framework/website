@@ -163,6 +163,118 @@ CPP
 <pre>$ crails build
 $ build/tests</pre>
 
+<h4>2.2.1 Injecting params in a request</h4>
+
+<p>
+  Instead of building fully-fledged http requests for your tests, you may
+  want to bypass that step and directly inject values into the context's
+  <a href="https://crails-framework.github.io/api-reference/#/packages/libcrails/classes/::Crails::Params" target="_blank">params</a>
+  object.
+</p>
+
+<p>
+  In the following exemple, we will use <code>Test::Request</code>'s params
+  attribute to inject the parameters of a search query:
+</p>
+
+<pre class="filepath">spec/my_spec</pre>
+<%= code_block <<CPP
+#include <crails/tests/helper.hpp>
+#include <crails/tests/request.hpp>
+
+class MySpec : public Crails::Tests::Helper
+{
+  MySpec()
+  {
+    using namespace Crails;
+    describe("index", []()
+    {
+      it("lists items", []()
+      {
+        Tests::Request request(HttpVerb::post, "/search-song");
+        DataTree response;
+
+        request.params["title"]  = "Conscious Club";
+        request.params["year"]   = 2016;
+        request.run();
+        EXPECT_STATUS(request, HttpStatus::ok);
+        response.from_json(request.response.body());
+        EXPECT(response["artist"].as<string>(), ==, "Vulfpeck");
+        EXPECT(response["album"].as<string>(),  ==, "Conscious Club");
+        EXPECT(response["track"].as<int>(),     ==, 4);
+      });
+    });
+  }
+};
+CPP
+%>
+
+<h4>2.2.2 Session parameters</h4>
+
+<p>
+  You may also inject your own session variables into a request in a
+  similar fashion:
+</p>
+
+<pre class="filepath">spec/my_spec.cpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/helper.hpp>
+#include <crails/tests/request.hpp>
+
+class MySpec : public Crails::Tests::Helper
+{
+  MySpec()
+  {
+    using namespace Crails;
+    describe("index", []()
+    {
+      it("lists items", []()
+      {
+        Tests::Request request(HttpVerb::get, "/private");
+
+        request.session["current_user_id"] = 1;
+        request.run();
+        EXPECT_STATUS(request, HttpStatus::ok);
+      });
+    });
+  }
+};
+CPP
+%>
+
+<p>
+  With session variables though, you may also be interested in the
+  state of the session after the request completed. For instance,
+  to check if an user has properly been disconnected:
+</p>
+
+<pre class="filepath">spec/my_spec.cpp</pre>
+<%= code_block <<CPP
+#include <crails/tests/helper.hpp>
+#include <crails/tests/request.hpp>
+
+class MySpec : public Crails::Tests::Helper
+{
+  MySpec()
+  {
+    using namespace Crails;
+    describe("index", []()
+    {
+      it("lists items", []()
+      {
+        Tests::Request request(HttpVerb::post, "/disconnect");
+
+        request.session["current_user_id"] = 1;
+        request.run();
+        EXPECT_STATUS(request, HttpStatus::ok);
+        EXPECT(request.session["current_session_id"].exists(), !=, true);
+      });
+    });
+  }
+};
+CPP
+%>
+
 <h3>2.3 Test preparation</h3>
 
 <p>
