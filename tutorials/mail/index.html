@@ -1,0 +1,509 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - </title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.11">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  Sending mails is a pretty typical action for web applications, and the Crails Framework comes with
+  a library to help you quickly set up mail sending services.
+</p>
+
+<h3>1.1 Installation</h3>
+
+<p>
+  Let's first install the mail plugin in your application using the following command:
+</p>
+
+<pre>$ crails plugins mail install
+</pre>
+
+<p>
+  This command will add a few files in your <i>config</i> folder, where you'll be able to define
+  the settings of the mail sending servers you'll be using. These could typically be
+  <a href="https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol">SMTP</a> servers,
+  or email delivery services such as <a href="https://mailgun.com">Mailgun</a> or
+  <a href="https://sendgrid.com">Sendgrid</a>.
+</p>
+
+<h3>1.2 Configuration</h3>
+
+<h4>1.2.1 SMTP server</h4>
+
+The most typical way to send emails is through a SMTP server. Let's see how to add an SMTP
+server to our mail servers:
+
+<pre class="filepath">config/mailers.cpp</pre>
+<pre><code class="language-cpp">#include "mailers.hpp"
+
+ApplicationMailServers::ApplicationMailServers()
+{
+  servers = {
+    {
+      "default", MailServer()
+        .backend(MailServers::Smtp)
+        .hostname("smtp.gandi.net")
+        .username("no-reply@domain.com")
+        .password("the-password")
+    }
+  };
+}
+</code></pre>
+
+<h4>1.2.2 Mailgun</h4>
+
+<p>
+  The mail library also comes with support for Mailgun, a sending service provider. While
+  some of these service provide an SMTP interface, they usually also come with an HTTP interface.
+  That's what the mail library uses for Mailgun. Let's see how to connect our mailing library
+  to Mailgun's HTTP interface, by adding a second server to our configuration:
+</p>
+
+<pre class="filepath">config/mailers.cpp</pre>
+<pre><code class="language-cpp">#include "mailers.hpp"
+
+ApplicationMailServers::ApplicationMailServers()
+{
+  servers = {
+    {
+      "default", MailServer()
+        .backend(MailServers::Smtp)
+        .hostname("smtp.gandi.net")
+        .username("no-reply@domain.com")
+        .password("the-password")
+    },
+    {
+      "mailgun", MailServer()
+        .backend(MailServers::Mailgun)
+        .hostname("mg.domain.com")
+        .password("your-mailgun-api-key")
+    }
+  };
+}
+</code></pre>
+
+<h2>2. Simple mail sending</h2>
+
+<h3>2.1 Mail generation</h3>
+
+<h4>2.1.1 Plain text mails</h4>
+
+<p>
+  Let's tinker a bit with the <code>Crails::Mail</code> object first. We'll first
+  create a function that returns a mail object. The mail will be plain text, with
+  a subject, a body, a sender and one recipient:
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mail.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  Crails::Mail mail;
+  std::string_view content("Greetings dear sir or madam,
+
+Thank you and goobye.");
+
+  mail.set_subject("Words of greetings");
+  mail.set_body(content.data(), content.length());
+  mail.set_sender("no-reply@domain.com");
+  mail.add_recipient("roger@gmail.com", "Roger Ackroyd");
+  return mail;
+}
+</code></pre>
+
+<h4>2.1.2 Rich text mails</h4>
+
+<p>
+  Plain text mails are a good start, as many mail client reject or limit the use of
+  rich content to their users. Still, using HTML in your mails can make them much
+  more attractive to users, and you may want to provide both plain text and html
+  content for your mails.
+</p>
+
+<p>
+  To achieve that result, you'll have to tell the Mail object which type of content
+  you're about to provide by setting a <i>content type</i> before calling <code>set_body</code>:
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mail.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  Crails::Mail mail;
+  std::string_view text_content("Greetings dear sir or madam,
+
+Thank you and goobye.");
+  std::string_view html_content("&lt;b&gt;Bold greetings&lt;/b&gt; dear sir &lt;i&gt;or&lt;/i&gt; madam,&lt;br/&gt;&lt;br/&gt;Thank you and goodbye.");
+
+  mail.set_content_type("text/html");
+  mail.set_body(html_content.data(), html_content.length());
+  mail.set_content_type("text/plain");
+  mail.set_body(text_content.data(), text_content.length());
+  // ...
+}
+</code></pre>
+
+<p>
+  Note that you also have the option not to provide a plain text fallback for your mail. In which
+  case, you will still have to call <code>set_content_type("text/html")</code> on your email before
+  setting its content, as <i>text/plain</i> is the default content type.
+</p>
+
+<h4>2.1.3 Recipient options</h4>
+
+<p>
+  An email can be sent to multiple mailboxes at once, by calling <code>add_recipient</code> multiple
+  times:
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mail.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  Crails::Mail mail;
+
+  // ...
+  mail.add_recipient("roger@gmail.com", "Roger Ackroyd");
+  mail.add_recipient("alain@gmail.com"); // Useful tip: the name parameter for recipients is optional
+  mail.add_recipient("piaget@gmail.com", "Jean Piaget");
+  return mail;
+}
+</code></pre>
+
+<p>
+  You may also want to differenciate the main recipients, from recipients who are merely receiving a copy
+  of the email. This is called <i>Carbon Copy</i>, and can be set as following:
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mail.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  Crails::Mail mail;
+
+  // ...
+  mail.add_recipient("roger@gmail.com", "Roger Ackroyd");
+  mail.add_recipient("alain@gmail.com", "", Crails::Mail::CarbonCopy);
+  mail.add_recipient("piaget@gmail.com", "Jean Piaget", Crails::Mail::CarbonCopy);
+  return mail;
+}
+).to_s); _erbout.&lt;&lt; "
+
+&lt;p&gt;
+  Moreover, you may also want some recipients to be hidden from other recipients. This is called
+  &lt;i&gt;Blind Carbon Copy&lt;/i&gt;, and is supported with the &lt;code&gt;Crails::Mail::Blind&lt;/code&gt; option:
+&lt;/p&gt;
+
+".freeze
+
+
+
+
+
+
+; _erbout.&lt;&lt;(( code_block &lt;&lt;CPP
+#include &lt;crails/mail.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  Crails::Mail mail;
+
+  // ...
+  mail.add_recipient("roger@gmail.com", "Roger Ackroyd");
+  mail.add_recipient("alain@gmail.com", "", Crails::Mail::CarbonCopy);
+  mail.add_recipient("piaget@gmail.com", "Jean Piaget", Crails::Mail::Blind);
+  return mail;
+}
+</code></pre>
+
+<h3>2.2 Sending an email</h3>
+
+<p>
+  Now that we know both how to configure our mail servers <i>and</i> how to define our emails,
+  let's see how to send mail through our servers.
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mail.hpp&gt;
+#include &lt;crails/mail_servers.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  // ...
+}
+
+void send_mail()
+{
+  Crails::MailServers&amp; mail_servers = Crails::MailServers::singleton::require();
+  std::shared_ptr&lt;Crails::MailServer&gt; server;
+
+  server = mail_servers.create("default");
+  server-&gt;connect([server, mail]()
+  {
+    server-&gt;send(make_mail(), [server]()
+    {
+      // Done
+    });
+  });
+}
+</code></pre>
+
+<p>
+  In this example, we first asked for the instance of the <code>Crails::MailServers</code>
+  singleton, which we then asked to create an instance of <code>Crails::MailServer</code>
+  using the <i>default</i> configuration (defined in <code>config/mailers.cpp</code>.
+</p>
+
+<p>
+  We then use the <code>connect</code> method to start a connection with the remote
+  server. Note that the <i>server</i> shared pointer is packed in connect's callback,
+  as we must ensure that the <code>Crails::MailServer</code> instance remains in memory
+  until the end of the process.
+</p>
+
+<p>
+  Once we've been connected to the remote server, we can start sending mails using the
+  <code>send</code> method, which takes a <code>Crails::Mail</code> object and a callback
+  as parameter. Again, make sure to pack the server's shared pointer in the callback.
+</p>
+
+<div class="hint-box">
+  When sending multiple mails, you do not have to wait for each individual mail to have
+  been sent before calling the <code>send</code> method again.
+</div>
+
+<h2>3. Mailers</h2>
+
+<p>
+  The <code>Crails::Mailer</code> object is designed to make it easier to integrate
+  mails in a Crails application, by factoring in controllers and renderers. Let's
+  see how to send a simple mail with a Mailer:  
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mailer.hpp&gt;
+
+Crails::Mail make_mail()
+{
+  // ...
+}
+
+void mailer_powered_mailing()
+{
+  auto mailer = std::make_shared&lt;Crails::Mailer&gt;("default");
+
+  mailer-&gt;get_mail() = make_mail();
+  mailer-&gt;send();
+}
+</code></pre>
+
+<div class="hint-box">
+  Note that we instantiated our mailer using <code>std::shared_ptr</code>: this is
+  absolutely mandatory, as mails are sent asynchronously, and the Mailer's instance
+  uses <code>std::enable_shared_from_this</code> to ensure it remains in memory
+   at least until the sending process is over. 
+</div>
+
+<p>
+  This is the most basic thing you may do with a mailer... but it doesn't help us
+  do anymore than we've done before. Let's see what options the Mailer brings to us: 
+</p>
+
+<h3>2.1 Rendering to mails</h3>
+
+<p>
+  Instead of inlining your mail content in your C++ code, you may want to take advantage
+  of the templating and rendering system of the crails framework.
+</p>
+
+<p>
+  The Mailer class provides a similar API as the <a href="https://crails-framework.github.io/api-reference/#/classes/::Crails::RenderController">RenderController</a> class. We'll make an html template for
+  our mail's html content, and render it with the <code>render</code> method:
+</p>
+
+<pre class="filepath">app/views/mails/greetings.html</pre>
+<pre><code class="language-html">std::string_view @name;
+// END LINKING
+&lt;h2&gt;Greetings, dear &lt;%= name %&gt;&lt;/h2&gt;
+
+&lt;p&gt;
+  These are just some words of greetings,&lt;br/&gt;
+  Thank you and goodbye.
+&lt;/p&gt;
+</code></pre>
+
+<p>
+  Now, to generate and send the email using our template and the Mailer class:
+</p>
+
+<pre><code class="language-cpp">#include &lt;crails/mailer.hpp&gt;
+
+void mailer_powered_mailing()
+{
+  auto mailer = std::make_shared&lt;Crails::Mailer&gt;("default");
+
+  mailer-&gt;get_mail().add_recipient("roger@yahoo.com");
+  mailer-&gt;get_mail().set_sender("no-reply@domain.org");
+  mailer-&gt;get_mail().set_subject("Words of greetings");
+  mailer-&gt;render("mail/greetings", {
+    {"name", "roger"}
+  });
+  mailer-&gt;send();
+}
+</code></pre>
+
+<h3>2.2 Integrating in controllers</h3>
+
+<p>
+  You may connect a mailer to a controller to gain some interesting
+  features, such as handling errors, or sharing the content of the
+  controller's <code>var</code> attribute with templates rendered
+  by the mailer.
+</p>
+
+<p>
+  To connect your mailer with your controller, just pass a shared pointer
+  of your controller to the mailer's constructor:
+</p>
+
+<pre><code class="language-cpp">#pragma once
+#include "application_controller.h"
+#include &lt;crails/mailer.hpp&gt;
+
+class MyController : public ApplicationController
+{
+  std::shared_ptr&lt;Crails::Mailer&gt; mailer;
+public:
+  MyController(Crails::Context&amp; context) : ApplicationController(context)
+  {
+    mailer = std::make_shared&lt;Crails::Mailer&gt;(
+      *this,
+      "default"
+    );
+  }
+
+  void send_mail()
+  {
+    vars["name"] = "roger"; // controller vars will be bound to templates rendered by the mailer 
+    mailer-&gt;get_mail().add_recipient(params["recipient"].as&lt;std::string&gt;());
+    mailer-&gt;get_mail().set_sender("no-reply@me.org");
+    mailer-&gt;render("mail/greetings");
+    mailer-&gt;send([this]()
+    {
+      render(TEXT, "Email sent successfully");
+    });
+  }
+};
+</code></pre>
+
+<p>
+  Note that in this previous example, we wait until the mail has actually been sent
+  before sending back an answer to the HTTP client.<br>
+  This isn't a good way to handle this, as the client will receive no response
+  if an error happens while sending the email. The next chapter will show you how
+  to handle both success and error scenarios.
+</p>
+
+<h4>2.2.2 Error management</h4>
+
+<p>
+  Overloading the Mailer class can bring you more control to what happens after
+  the mail sending process has been completed or aborted, using the <code>on_sent</code>
+  and <code>on_error_occured</code> virtual methods:
+</p>
+
+<pre><code class="language-cpp">#pragma once
+#include "application_controller.h"
+#include &lt;crails/mailer.hpp&gt;
+
+class MyController : public ApplicationController
+{
+  class MyMailer : public Crails::Mailer
+  {
+  public:
+    MyMailer(MyController&amp; controller) : Crails::Mailer(controller, "default")
+    {
+      callback = std::bind(&amp;MyController::on_mail_completed, &amp;controller, std::placeholders::_1);
+    }
+
+    void on_sent() override
+    {
+      callback(true);
+    }
+
+    void on_error_occured(const std::exception&amp; error) override
+    {
+      Crails::logger &lt;&lt; Crails::Logger::Error
+                     &lt;&lt; "MyController failed to send mail: "
+                     &lt;&lt; error.what() &lt;&lt; Crails::Logger::endl;
+      callback(false);
+    }
+
+  private:
+    std::function&lt;void(bool)&gt; callback;
+  };
+
+  std::shared_ptr&lt;MyMailer&gt; mailer;
+public:
+  MyController(Crails::Context&amp; context) : ApplicationController(context)
+  {
+    mailer = std::make_shared&lt;MyMailer&gt;(*this);
+  }
+
+  void send_mail()
+  {
+    vars["name"] = "roger";
+    mailer-&gt;get_mail().add_recipient(params["recipient"].as&lt;std::string&gt;());
+    mailer-&gt;get_mail().set_sender("no-reply@me.org");
+    mailer-&gt;render("mail/greetings");
+    mailer-&gt;send();
+  }
+
+  void on_mail_completed(bool success)
+  {
+    render(TEXT, success ? "Email sent successfully" : "Failed to send email");
+  }
+};
+</code></pre>
+
+<p>
+  In the previous example, we overloaded <code>Crails::Mailer</code> and connected the <code>on_sent</code>
+  and <code>on_error_occured</code> to the <code>on_mail_completed</code> method in our controller,
+  allowing us to send a response to the HTTP client regardless of whether the process fails or succeed.
+</p>
+
+<p>
+  This is merely a simple example of what you may do from overloading mailers: the possibilities are legion.
+  Good luck.
+</p>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>
