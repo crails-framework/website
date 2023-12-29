@@ -103,7 +103,7 @@
   </tr>
   <tr>
     <td>config/</td>
-    <td>Configure your application's database, <a href="../request_pipeline">request pipeline</a> and several optional features of Crails.</td>
+    <td>Configure your application's server, database, <a href="../request_pipeline">request pipeline</a> and several optional features of Crails.</td>
   </tr>
   <tr>
     <td>lib/</td>
@@ -231,10 +231,10 @@ public:
 </p>
 
 <pre class="filepath">app/routes.cpp</pre>
-<pre><code class="language-cpp">#include &lt;crails/router.hpp&gt;
+<pre><code class="language-cpp">#include "config/router.hpp"
 #include "controllers/welcome.hpp"
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   match_action("GET", "/", WelcomeController, index);
 }
@@ -408,9 +408,9 @@ This will create the following files:
 <pre class="filepath">app/routes.cpp</pre>
 <pre><code class="language-cpp">#include "app/controllers/article.hpp"
 #include "app/controllers/welcome.hpp"
-#include &lt;crails/router.hpp&gt;
+#include "config/router.hpp"
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   resource_actions(article, ArticleController);
   match_action("GET", "/", WelcomeController, index);
@@ -1025,9 +1025,9 @@ $ build/tasks/odb_migrate/task odb</code></pre>
 <pre><code class="language-cpp">#include "app/controllers/comment.hpp" // Add comment controller include
 #include "app/controllers/article.hpp"
 #include "app/controllers/welcome.hpp"
-#include &lt;crails/router.hpp&gt;
+#include "config/router.hpp"
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   resource_actions(article, ArticleController);
   scope("article/:article_id", [this]()

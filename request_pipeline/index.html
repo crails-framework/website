@@ -41,17 +41,15 @@
 #include &lt;crails/request_parsers/url_parser.hpp&gt;
 #include &lt;crails/request_parsers/form_parser.hpp&gt;
 #include &lt;crails/request_parsers/multipart_parser.hpp&gt;
+#include "server.hpp"
 
 using namespace Crails;
 
-const std::string Server::temporary_path = "/tmp";
-
-void Server::initialize_request_pipe()
+void ApplicationServer::initialize_request_pipe()
 {
   add_request_parser(new RequestUrlParser);
   add_request_parser(new RequestFormParser);
   add_request_parser(new RequestMultipartParser);
-
   add_request_handler(new ActionRequestHandler);
   add_request_handler(new FileRequestHandler);
 }
@@ -76,12 +74,11 @@ void Server::initialize_request_pipe()
 
 <pre><code class="language-cpp">#include &lt;crails/request_parsers/json_parser.hpp&gt;
 #include &lt;crails/request_handlers/action.hpp&gt;
+#include "server.hpp"
 
 using namespace Crails;
 
-const std::string Server::temporary_path = "/tmp";
-
-void Server::initialize_request_pipe()
+void ApplicationServer::initialize_request_pipe()
 {
   add_request_parser(new RequestJsonParser);
   add_request_handler(new ActionRequestHandler);
@@ -127,7 +124,8 @@ public:
 </code></pre>
 
 <p>
-  Simple stuff, really: overload <code>operator()</code>, receive a <code>Crails::Context</code>
+  Simple stuff, really: overload <code>operator()</code>, receive a 
+  <a href="https://crails-framework.github.io/api-reference/#/classes/::Crails::Context" target="_blank">Crails::Context</a>
   and a callback object.
 </p>
 <p>
@@ -424,24 +422,15 @@ static void load_yaml_array(YAML::Node node, Data branch)
 
   load_yaml_tree(node, context.params);
 }
-CPP ).to_s); _erbout.&lt;&lt; "
+</code></pre>
 
-&lt;p&gt;
-  Now there's still an issue remaining: if the parsing fail, &lt;code&gt;YAML::Load&lt;/code&gt; will throw an
+<p>
+  Now there's still an issue remaining: if the parsing fail, <code>YAML::Load</code> will throw an
   exception, and our server will respond with an error 500. That would be inaccurate, as the error
-  lies in the query. Let's update our &lt;code&gt;body_received&lt;/code&gt; method to handle parsing errors:
-&lt;/p&gt;
+  lies in the query. Let's update our <code>body_received</code> method to handle parsing errors:
+</p>
 
-".freeze
-
-
-
-
-
-
-
-; _erbout.&lt;&lt;(( code_block &lt;&lt;CPP
-void MyRequestParser::body_received(Crails::Context&amp; context, const std::string&amp; body) const
+<pre><code class="language-cpp">void MyRequestParser::body_received(Crails::Context&amp; context, const std::string&amp; body) const
 {
   try
   {

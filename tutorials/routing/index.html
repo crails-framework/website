@@ -55,11 +55,11 @@
   and typically look like this:
 </p>
 
-<pre><code class="language-cpp">#include &lt;crails/router.hpp&gt;
+<pre><code class="language-cpp">#include "config/router.hpp"
 #include "controllers/brands.hpp"
 #include "controllers/products.hpp"
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   match_action("GET", "brands", Brands, index);
   scope("brands/:brand_id", [&amp;]()
@@ -87,7 +87,7 @@ void Crails::Router::initialize()
   callback();
 }
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   match("GET", "hello_world", hello_world);
 }

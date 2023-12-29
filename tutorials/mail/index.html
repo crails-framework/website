@@ -209,22 +209,14 @@ Crails::Mail make_mail()
   mail.add_recipient("piaget@gmail.com", "Jean Piaget", Crails::Mail::CarbonCopy);
   return mail;
 }
-).to_s); _erbout.&lt;&lt; "
+</code></pre>
 
-&lt;p&gt;
+<p>
   Moreover, you may also want some recipients to be hidden from other recipients. This is called
-  &lt;i&gt;Blind Carbon Copy&lt;/i&gt;, and is supported with the &lt;code&gt;Crails::Mail::Blind&lt;/code&gt; option:
-&lt;/p&gt;
+  <i>Blind Carbon Copy</i>, and is supported with the <code>Crails::Mail::Blind</code> option:
+</p>
 
-".freeze
-
-
-
-
-
-
-; _erbout.&lt;&lt;(( code_block &lt;&lt;CPP
-#include &lt;crails/mail.hpp&gt;
+<pre><code class="language-cpp">#include &lt;crails/mail.hpp&gt;
 
 Crails::Mail make_mail()
 {
