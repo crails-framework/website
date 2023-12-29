@@ -1,0 +1,443 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="utf-8">
+    <title>Crails Framework - Building an application with MongoDB</title>
+    <link rel="stylesheet" href="../../css/application.css">
+    <link rel="stylesheet" href="../../css/code-qtcreator.css">
+    <script src="../../highlight.pack.js"></script>
+    <script src="../../js/index.js"></script>
+
+    <!-- you don't need to keep this, but it's cool for stats! -->
+    <meta name="generator" content="Nanoc 4.12.11">
+  </head>
+  <body>
+    <div id="header">
+      <img class="logo" src="../../images/logo.png">
+      <h1>Crails Framework</h1>
+      <ul class="main-menu">
+        <li><a href="../../">Home</a></li><li>
+            <a href="../../getting-started">Getting started</a></li><li>
+            <a href="..">Tutorials</a></li><li>
+	    <a href="https://github.com/crails-framework/crails" target="_blank">GitHub</a></li>
+      </ul>
+    </div>
+    <div id="content-wrapper">
+      <div id="main">
+        <div id="with-index"></div>
+
+<h2>1. Introduction</h2>
+
+<p>
+  Most tutorials use SQL databases, but the Crails Framework also supports other databases, such
+  as MongoDB. In this tutorial, we'll see:
+  </p><ul>
+    <li>how to install MongoDB support for the Crails Framework</li>
+    <li>how to create and setup an application with a MongoDB database,</li>
+    <li>how to perform basic queries</li>
+  </ul>
+<p></p>
+
+<p>
+  This tutorial assumes that you already have a MongoDB server running on your machine.
+</p>
+
+<h3>1.1 Installation</h3>
+
+<p>
+  MongoDB support can optionally be installed by Crails' installation script, assuming that you
+  already have the <a href="https://mongocxx.org">the MongoDB C++ driver</a> installed on your
+  system.<br>
+  If you didn't install it then, or didn't use the installation script at all, here's how to
+  install <code>libcrails-mongodb</code> and its dependencies on your system:
+</p>
+
+<h4>1.1.1 mongocxx</h4>
+
+<p>
+  We will first need to install <a href="https://mongocxx.org">the MongoDB C++ driver</a>.<br>
+  Go to the <a href="https://mongocxx.org/mongocxx-v3/installation/" target="_blank">installation manual</a>
+  and follow the instructions.
+</p>
+
+<h4>1.1.2 libcrails-mongodb</h4>
+
+<p>
+  Next we will install <code>libcrails-mongodb</code>, using <i>build2</i>:
+</p>
+
+<pre><code class="language-cpp">bpkg create -d crails-mongodb-build-gcc cc config.cxx=g++
+cd crails-mongodb-build-gcc
+bpkg add 'https://github.com/crails-framework/libcrails-mongodb.git#master'
+bpkg fetch
+bpkg build libcrails-mongodb '?sys:libmongocxx/*' '?sys:libcrails-databases/*' '?sys:libcrails/*'
+bpkg install --all --recursive config.install.root=/usr/local config.install.sudo=sudo
+</code></pre>
+
+<p>
+  Note that the <code>bpkg build</code> command imports several packages from your system:
+  <i>libmongocxx, libcrails-databases</i> and <i>libcrails</i>. These package should already
+  be installed on your system.
+</p>
+
+<p>
+  And that's it, you're all set for the next step.
+</p>
+
+<h2>2. Enabling MongoDB</h2>
+
+<h3>2.1 Creating an application with a MongoDB database</h3>
+
+<p>
+  Creating an application from scratch with mongodb support is
+  pretty simple. Just run the following command:
+</p>
+
+<pre>$ crails new --name blog --database mongodb --formats html</pre>
+
+<p>
+  Your new application has been created in the <i>blog</i> directory.
+</p>
+
+<h3>2.2 Adding a MongoDB database to an existing application</h3>
+
+<p>
+  If you want to add mongodb support to an already existing application,
+  go to the application's folder and run the following command:
+</p>
+
+<pre>$ crails plugins mongodb install</pre>
+
+<h3>2.3 MongoDB database settings</h3>
+
+<p>
+  Like with all database supported by Crails, the connection details
+  are specified in the <code>config/databases.cpp</code> file. Let's
+  see how it looks like after having installed MongoDB support:
+</p>
+
+
+<pre class="filepath">config/databases.cpp</pre>
+<pre><code class="language-cpp">#include &lt;crails/databases.hpp&gt;
+
+using namespace Crails;
+using namespace std;
+
+const Databases::Settings Databases::settings = {
+  {
+    Production, {
+    }
+  },
+
+  {
+    Development, {
+      {"mongo",{{"name", "blog"},{"port", static_cast&lt;unsigned int&gt;(27017)}}}
+    }
+  },
+
+  {
+    Test, {
+    }
+  }
+};
+</code></pre>
+
+<p>
+  Right now, we only have one database configuration, internally named <i>mongo</i>,
+  which a MongoDB will store in a database named <i>blog</i>. This configuration
+  is only valid in the "Production" environment: let's see how we could setup
+  MongoDB servers for other environments:
+</p>
+
+<pre class="filepath">config/databases.cpp</pre>
+<pre><code class="language-cpp">#include &lt;crails/databases.hpp&gt;
+
+using namespace Crails;
+using namespace std;
+
+const Databases::Settings Databases::settings = {
+  {
+    Production, {
+      {"mongo",{{"name", "blog"},{"host", "mongo-server.org"},{"port", static_cast&lt;unsigned int&gt;(27017)}}}
+    }
+  },
+
+  {
+    Development, {
+      {"mongo",{{"name", "blog_dev"},{"port", static_cast&lt;unsigned int&gt;(27017)}}}
+    }
+  },
+
+  {
+    Test, {
+      {"mongo",{{"name", "blog_test"},{"port", static_cast&lt;unsigned int&gt;(27017)}}}
+    }
+  }
+};
+</code></pre>
+
+<p>
+  <i>mongo</i> is the default internal name for MongoDB databases: you should
+  not change it unless your application needs to work with multiple MongoDB
+  databases.
+</p>
+
+<h2>3. Controllers &amp; Models</h2>
+
+<h3>3.1 Scaffolding</h3>
+
+<p>
+  If mongodb is the only database backend enabled in your application, then
+  <a href="../scaffolding/" target="_blank">the scaffolding commands</a>
+  will generate your controllers and models with MongoDB support in mind.
+</p>
+
+<p>
+  Let's generate a whole set of controller, model and views with the
+  following command:
+</p>
+
+<pre>$ crails scaffold resource \
+  --model article \
+  --format html \
+  --property std::string/title std::string/author std::string/content
+</pre>
+
+<h3>3.2 Models</h3>
+
+<p>
+  Let's take a look at the generated MongoDB model:
+</p>
+
+<pre class="filepath">app/models/article.hpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include &lt;crails/mongodb/model.hpp&gt;
+class Article : public Crails::MongoDB::ModelInterface
+{
+public:
+  static const std::string collection_name;
+  static const std::string scope;
+  static const std::string plural_scope;
+  static const std::string view;
+
+  void set_id(const std::string&amp; value) { id = value; }
+  std::string get_id() const override { return id; }
+  std::string to_json() const override;
+  void edit(Data) override;
+  void merge_data(Data) const;
+  
+  void set_author(const std::string&amp; value) { this-&gt;author = value; }
+  const std::string&amp; get_author() const { return author; }
+  void set_content(const std::string&amp; value) { this-&gt;content = value; }
+  const std::string&amp; get_content() const { return content; }
+  void set_title(const std::string&amp; value) { this-&gt;title = value; }
+  const std::string&amp; get_title() const { return title; }
+
+
+private:
+  std::string id;
+  std::string author;
+  std::string content;
+  std::string title;
+};
+</code></pre>
+
+<p>
+  First thing to note is that the model inherits
+  <a target="_blank" href="https://crails-framework.github.io/api-reference/#/packages/libcrails-mongodb/classes/::Crails::MongoDB::ModelInterface">Crails::MongoDB::ModelInterface</a>.
+  This interface helps other Crails MongoDB related tools to persist and load your
+  models from the results of requests made through <i>mongocxx</i>'s API.
+</p>
+
+<p>
+  Next thing to notice are the global constants defined by this class:
+  </p><ul>
+    <li><i>collection_name</i> is the name of the collection in which the models will be stored</li>
+    <li><i>scope</i> will be used as key when packing or unpacking a model from json or form-data queries</li>
+    <li><i>plural_scope</i> will designate an array of this type when rendering json</li>
+    <li><i>view</i> should point to the path of the default view for this object</li>
+  </ul>
+<p></p>
+
+<p>
+  Lastly, there are two methods that you should keep track of, as you'll need to update them
+  whenver you add or remove properties to the model:
+</p>
+
+<pre><code class="language-cpp">  void edit(Data) override;
+  void merge_data(Data) const;
+</code></pre>
+
+<p>
+  The <i>edit</i> method updates the model from the content of a
+  <a target="_blank" href="https://crails-framework.github.io/api-reference/#/classes/::Data">Data</a>
+  object.
+</p>
+
+<p>
+  The <i>merge_data</i> does the opposite, putting the content
+  of a model into a Data object.
+</p>
+
+<p>
+  Let's take a look at their implementation:
+</p>
+
+<pre class="filepath">app/models/article.cpp</pre>
+<pre><code class="language-cpp">#include "article.hpp"
+
+const std::string Article::collection_name = "Article";
+const std::string Article::scope = "article";
+const std::string Article::plural_scope = "articles";
+const std::string Article::view = "";
+
+void Article::edit(Data params)
+{
+  if (params["author"].exists())
+    set_author(params["author"]);
+  if (params["content"].exists())
+    set_content(params["content"]);
+  if (params["title"].exists())
+    set_title(params["title"]);
+}
+
+void Article::merge_data(Data out) const
+{
+  out["author"] = this-&gt;author;
+  out["content"] = this-&gt;content;
+  out["title"] = this-&gt;title;
+}
+
+std::string Article::to_json() const
+{
+  DataTree out;
+
+  merge_data(out);
+  return out.to_json();
+}
+</code></pre>
+
+<h3>3.3 Controllers</h3>
+
+<p>
+  Let's now take a look at our controller:
+</p>
+
+<pre class="filepath">app/controllers/article.cpp</pre>
+<pre><code class="language-cpp">#pragma once
+#include "app/controllers/application.hpp"
+#include "app/models/article.hpp"
+#include &lt;crails/mongodb/controller.hpp&gt;
+
+class Article;
+
+class ArticleController : public Crails::MongoDB::Controller&lt;ApplicationController&gt;
+{
+public:
+  ArticleController(Crails::Context&amp;);
+
+  void initialize() override;
+  void finalize() override;
+  void index();
+  void show();
+  void create();
+  void update();
+  void destroy();
+  void new_();
+  void edit();
+protected:
+  std::shared_ptr&lt;Article&gt; find_model(std::string id);
+  void require_model(std::string id);
+  void find_list();
+
+  std::shared_ptr&lt;Article&gt; model;
+  std::vector&lt;Article&gt; model_list;
+};
+</code></pre>
+
+<p>
+  Our controller inherits from 
+  <a target="_blank" href="https://crails-framework.github.io/api-reference/#/packages/libcrails-mongodb/classes/::Crails::MongoDB::Controller">Crails::MongoDB::Controller</a>: this allows you to interact with your MongoDB databases simply by using a 
+  <a target="_blank" href="https://crails-framework.github.io/api-reference/#/packages/libcrails-mongodb/classes/::Crails::MongoDB::Connection">Crails::MongoDB::Connection</a> object always available from your controller, under the property name <i>database</i>.<br>
+  On top of it, mongodb related operation will be timed, and time spent on these operations will be reported in the application logs after each query.
+</p>
+
+<h3>3.1 Querying for models</h3>
+
+<p>
+  Our controller uses the method <code>find_list</code> to figure out what the article
+  index should contain. In this chapter, we'll learn how to make more advanced queries
+  by adding options to our article index. Let's first see what the method looks like:
+</p>
+
+<pre class="filepath">app/controllers/article.cpp</pre>
+<pre><code class="language-cpp">void ArticleController::find_list()
+{
+  Crails::MongoDB::Result&lt;Article&gt; results;
+
+  database.find(results);
+  model_list = results.to_vector();
+  std::cout &lt;&lt; model_list.size() &lt;&lt; std::endl;
+  vars["models"] = &amp;model_list;
+}
+</code></pre>
+
+<p>
+  We first create a 
+  <a target="_blank" href="https://crails-framework.github.io/api-reference/#/packages/libcrails-mongodb/classes/::Crails::MongoDB::Result">Crails::MongoDB::Result</a> object, before calling <code>database.find(results)</code>
+  to fetch all the objects from the article collection.<br>
+  These objects are then converted to the Article model type and stored into the <i>model_list</i>
+  vector. Lastly, the vector is made available to the views through the <i>models</i> shared variable.
+</p>
+
+<p>
+  Let's try to add an option to search among articles. We'll be using <i>libmongocxx</i> document builder to create a query that checks the articles' title attribute against a regular expression:
+</p>
+
+<pre class="filepath">app/controllers/article.cpp</pre>
+<pre><code class="language-cpp">void ArticleController::find_list()
+{
+  Crails::MongoDB::Result&lt;Article&gt; results;
+  std::string search_query = params["query"].defaults_to&lt;std::string&gt;("");
+  bsoncxx::document::view index_query{};
+
+  if (search_query.length() &gt; 0)
+  {
+    index_query = bsoncxx::builder::stream::document{}
+      &lt;&lt; "title"
+      &lt;&lt; bsoncxx::builder::stream::open_document
+        &lt;&lt; "$regex" &lt;&lt; search_query
+        &lt;&lt; bsoncxx::builder::stream::close_document
+      &lt;&lt; bsoncxx::builder::stream::finalize;
+  }
+  database.find(results, index_query);
+  model_list = results.to_vector();
+  std::cout &lt;&lt; model_list.size() &lt;&lt; std::endl;
+  vars["models"] = &amp;model_list;
+}
+</code></pre>
+
+<p>
+  This example show you that <code>database.find(results)</code> can
+  also take a query as an optional second argument. This type of this
+  second parameter is <code>bsoncxx::document::view_or_value</code>,
+  meaning you are allowed to provide either
+  <code>bsoncxx::document::view</code> or
+  <code>bsoncxx::document::value</code>.
+</p>
+
+<p>
+  In this example, we built a <code>bsoncxx::document::view</code>
+  using <i>bsoncxx</i>'s stream-based document builder. You can
+  learn more about how to provide bson documents from
+  <a target="_blank" href="https://mongocxx.org/mongocxx-v3/working-with-bson/">mongocxx "Working with BSON" manual</a>.
+</p>
+
+      </div>
+    </div>
+    <div id="footer">
+      This work is licensed under a <a href="https://creativecommons.org/licenses/by-sa/4.0/">Creative Commons Attribution-ShareAlike 4.0 International License</a>.<br>
+      It is a modified version of the <a href="https://guides.rubyonrails.org/">Ruby on Rails guides</a>, amended and completed to fit Crails development.
+    </div>
+    <script>hljs.initHighlightingOnLoad();</script>
+  
+
+</body></html>
