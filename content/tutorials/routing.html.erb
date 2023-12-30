@@ -40,11 +40,11 @@ HTML
 </p>
 
 <%= code_block <<CPP
-#include <crails/router.hpp>
+#include "config/router.hpp"
 #include "controllers/brands.hpp"
 #include "controllers/products.hpp"
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   match_action("GET", "brands", Brands, index);
   scope("brands/:brand_id", [&]()
@@ -74,7 +74,7 @@ void hello_world(Crails::Request& request, std::function<void()> callback)
   callback();
 }
 
-void Crails::Router::initialize()
+ApplicationRouter::ApplicationRouter()
 {
   match("GET", "hello_world", hello_world);
 }
