@@ -207,7 +207,7 @@ public:
 
   void index()
   {
-    vars["message"] = std::string("Howdy, little birdie !");
+    vars["message"] = "Howdy, little birdie !";
     render("home/index");
   }
 };
@@ -217,9 +217,13 @@ HTML
 %>
 
 <p>
-  Note how we explicitely created a <code>std::string</code> when assignin the variable: that's
-  because our template specify the <code>std::string</code> type for the message variable, rather
-  than the <code>const char*</code> type.
+  Note that in this example, <code>"Howdy, little birdie !"</code> has the <code>const char*</code>
+  type, which does not match the variable <code>std::string</code> type we set for the <i>message</i>
+  variable in our template.<br/>
+  With any other types, this would be a mistake: you need to be careful that the rvalue you assign
+  to a shared variable is exactly the same as the template's. However, Crails will automatically
+  convert between <code>std::string</code>, <code>std::string_view</code> and <code>const char*</code>,
+  making this example valid.
 </p>
 
 <p>
@@ -241,7 +245,7 @@ public:
   void index()
   {
     render("home/index", {
-      {"message", std::string("Howdy, little birdie !")}
+      {"message", "Howdy, little birdie !"}
     });
   }
 };
@@ -334,7 +338,7 @@ class HomeController : public Crails::Controller
 public:
   HomeController(Crails::Context& context) : Crails::Controller(context)
   {
-    vars["layout"] = std::string("home/my_layout");
+    vars["layout"] = "home/my_layout";
   }
 
   void index()
@@ -355,7 +359,7 @@ HTML
   void index()
   {
     render("home/index", {
-      {"layout", std::string("home/my_layout")}
+      {"layout", "home/my_layout"}
     });
   }
 HTML
