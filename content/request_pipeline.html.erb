@@ -22,17 +22,15 @@ title: The Crails Request Pipe
 #include <crails/request_parsers/url_parser.hpp>
 #include <crails/request_parsers/form_parser.hpp>
 #include <crails/request_parsers/multipart_parser.hpp>
+#include "server.hpp"
 
 using namespace Crails;
 
-const std::string Server::temporary_path = "/tmp";
-
-void Server::initialize_request_pipe()
+void ApplicationServer::initialize_request_pipe()
 {
   add_request_parser(new RequestUrlParser);
   add_request_parser(new RequestFormParser);
   add_request_parser(new RequestMultipartParser);
-
   add_request_handler(new ActionRequestHandler);
   add_request_handler(new FileRequestHandler);
 }
@@ -59,12 +57,11 @@ CPP
 <%= code_block <<CPP
 #include <crails/request_parsers/json_parser.hpp>
 #include <crails/request_handlers/action.hpp>
+#include "server.hpp"
 
 using namespace Crails;
 
-const std::string Server::temporary_path = "/tmp";
-
-void Server::initialize_request_pipe()
+void ApplicationServer::initialize_request_pipe()
 {
   add_request_parser(new RequestJsonParser);
   add_request_handler(new ActionRequestHandler);
@@ -113,7 +110,8 @@ CPP
 %>
 
 <p>
-  Simple stuff, really: overload <code>operator()</code>, receive a <code>Crails::Context</code>
+  Simple stuff, really: overload <code>operator()</code>, receive a 
+  <a href="https://crails-framework.github.io/api-reference/#/classes/::Crails::Context" target="_blank">Crails::Context</a>
   and a callback object.
 </p>
 <p>
@@ -423,7 +421,8 @@ void MyRequestParser::body_received(Crails::Context& context, const std::string&
 
   load_yaml_tree(node, context.params);
 }
-CPP %>
+CPP
+%>
 
 <p>
   Now there's still an issue remaining: if the parsing fail, <code>YAML::Load</code> will throw an
